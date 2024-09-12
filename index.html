@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Push Notification Demo</title>
-    <link rel="manifest" href="./manifest.json">
+    <link rel="manifest" href="https://severside-json.github.io/webswjsnotification/manifest.json">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -44,52 +44,92 @@
         <button id="notifyButton">Subscribe to Notifications</button>
     </div>
 
-    <script>
-        const publicVapidKey = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA';
+   <script>
+const publicVapidKey = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA';
 
-        function urlBase64ToUint8Array(base64String) {
-            const padding = '='.repeat((4 - base64String.length % 4) % 4);
-            const base64 = (base64String + padding)
-                .replace(/\-/g, '+')
-                .replace(/_/g, '/');
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
 
-            const rawData = window.atob(base64);
-            const outputArray = new Uint8Array(rawData.length);
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
 
-            for (let i = 0; i < rawData.length; ++i) {
-                outputArray[i] = rawData.charCodeAt(i);
-            }
-            return outputArray;
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+async function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register('./sw.js');
+            console.log('Service Worker registered', registration);
+            return registration;
+        } catch (error) {
+            console.error('Service Worker registration failed:', error);
+            throw error;
         }
+    } else {
+        throw new Error('Service Worker is not supported in this browser');
+    }
+}
 
-        async function registerPushNotification() {
-            if ('serviceWorker' in navigator && 'PushManager' in window) {
-                try {
-                    const registration = await navigator.serviceWorker.register('./sw.js');
-                    console.log('Service Worker registered', registration);
+async function subscribeToPushNotifications(registration) {
+    try {
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+        });
+        console.log('Push Notification Subscription:', subscription);
+        // Ở đây, trong ứng dụng thực tế, bạn sẽ gửi subscription đến server
+        console.log('Subscription object:', JSON.stringify(subscription));
+        return subscription;
+    } catch (error) {
+        console.error('Push Notification Subscription failed:', error);
+        throw error;
+    }
+}
 
-                    const subscription = await registration.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+async function registerPushNotification() {
+    try {
+        const registration = await registerServiceWorker();
+        
+        // Đảm bảo Service Worker đã kích hoạt
+        if (registration.active) {
+            await subscribeToPushNotifications(registration);
+            alert('Đăng ký nhận thông báo thành công!');
+        } else {
+            // Nếu Service Worker chưa kích hoạt, đợi cho đến khi nó kích hoạt
+            await new Promise(resolve => {
+                if (registration.installing) {
+                    registration.installing.addEventListener('statechange', e => {
+                        if (e.target.state === 'activated') {
+                            resolve();
+                        }
                     });
-
-                    console.log('Push Notification Subscription:', subscription);
-                    
-                    // Ở đây, trong ứng dụng thực tế, bạn sẽ gửi subscription đến server
-                    // Nhưng vì chúng ta đang tập trung vào client-side, chúng ta sẽ chỉ log nó
-                    console.log('Subscription object:', JSON.stringify(subscription));
-                    
-                    alert('Đăng ký nhận thông báo thành công!');
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Đăng ký nhận thông báo thất bại. Vui lòng thử lại.');
+                } else if (registration.waiting) {
+                    registration.waiting.addEventListener('statechange', e => {
+                        if (e.target.state === 'activated') {
+                            resolve();
+                        }
+                    });
+                } else {
+                    resolve();
                 }
-            } else {
-                alert('Trình duyệt của bạn không hỗ trợ push notifications.');
-            }
+            });
+            await subscribeToPushNotifications(registration);
+            alert('Đăng ký nhận thông báo thành công!');
         }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Đăng ký nhận thông báo thất bại. Vui lòng thử lại.');
+    }
+}
 
-        document.querySelector('#notifyButton').addEventListener('click', registerPushNotification);
-    </script>
+document.querySelector('#notifyButton').addEventListener('click', registerPushNotification);
+</script>
 </body>
 </html>
