@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Push Notification Demo</title>
+    <title>My PWA Notification App</title>
     <link rel="manifest" href="https://severside-json.github.io/webswjsnotification/manifest.json">
+    <meta name="theme-color" content="#4A90E2">
+    <link rel="apple-touch-icon" href="https://severside-json.github.io/webswjsnotification/icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="PWA Notify">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -23,7 +28,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         button {
-            background-color: #4CAF50;
+            background-color: #4A90E2;
             border: none;
             color: white;
             padding: 15px 32px;
@@ -39,97 +44,75 @@
 </head>
 <body>
     <div class="container">
-        <h1>Push Notification Demo</h1>
+        <h1>PWA Notification Demo</h1>
         <p>Click the button below to subscribe to push notifications.</p>
-        <button id="notifyButton">Subscribe to Notifications</button>
+        <button id="subscribeButton">Subscribe to Notifications</button>
     </div>
 
-   <script>
-const publicVapidKey = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA';
+    <script>
+        const publicVapidKey = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA';
 
-function urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-        .replace(/\-/g, '+')
-        .replace(/_/g, '/');
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
 
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
 
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-}
-
-async function registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-        try {
-            const registration = await navigator.serviceWorker.register('./sw.js');
-            console.log('Service Worker registered', registration);
-            return registration;
-        } catch (error) {
-            console.error('Service Worker registration failed:', error);
-            throw error;
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
         }
-    } else {
-        throw new Error('Service Worker is not supported in this browser');
-    }
-}
 
-async function subscribeToPushNotifications(registration) {
-    try {
-        const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
-        });
-        console.log('Push Notification Subscription:', subscription);
-        // Ở đây, trong ứng dụng thực tế, bạn sẽ gửi subscription đến server
-        console.log('Subscription object:', JSON.stringify(subscription));
-        return subscription;
-    } catch (error) {
-        console.error('Push Notification Subscription failed:', error);
-        throw error;
-    }
-}
+        async function subscribeToPushNotifications() {
+            if ('serviceWorker' in navigator && 'PushManager' in window) {
+                try {
+                    const registration = await navigator.serviceWorker.register('./sw.js');
+                    console.log('Service Worker registered successfully:', registration);
 
-async function registerPushNotification() {
-    try {
-        const registration = await registerServiceWorker();
-        
-        // Đảm bảo Service Worker đã kích hoạt
-        if (registration.active) {
-            await subscribeToPushNotifications(registration);
-            alert('Đăng ký nhận thông báo thành công!');
-        } else {
-            // Nếu Service Worker chưa kích hoạt, đợi cho đến khi nó kích hoạt
-            await new Promise(resolve => {
-                if (registration.installing) {
-                    registration.installing.addEventListener('statechange', e => {
-                        if (e.target.state === 'activated') {
-                            resolve();
-                        }
+                    const subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
                     });
-                } else if (registration.waiting) {
-                    registration.waiting.addEventListener('statechange', e => {
-                        if (e.target.state === 'activated') {
-                            resolve();
-                        }
-                    });
-                } else {
-                    resolve();
+
+                    console.log('Push Notification Subscription:', subscription);
+                    
+                    // Tại đây, bạn sẽ gửi subscription object đến server của mình
+                    // Ví dụ:
+                    // await fetch('/api/subscribe', {
+                    //     method: 'POST',
+                    //     body: JSON.stringify(subscription),
+                    //     headers: {
+                    //         'Content-Type': 'application/json',
+                    //     },
+                    // });
+
+                    alert('Đăng ký nhận thông báo thành công!');
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Đăng ký nhận thông báo thất bại. Vui lòng thử lại.');
                 }
-            });
-            await subscribeToPushNotifications(registration);
-            alert('Đăng ký nhận thông báo thành công!');
+            } else {
+                alert('Push notifications are not supported in your browser.');
+            }
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Đăng ký nhận thông báo thất bại. Vui lòng thử lại.');
-    }
-}
 
-document.querySelector('#notifyButton').addEventListener('click', registerPushNotification);
-</script>
+        document.getElementById('subscribeButton').addEventListener('click', subscribeToPushNotifications);
+
+        // Kiểm tra xem Service Worker đã được đăng ký chưa khi trang tải
+        window.addEventListener('load', async () => {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.register('./sw.js');
+                    console.log('Service Worker registered on page load:', registration);
+                } catch (error) {
+                    console.error('Service Worker registration failed:', error);
+                }
+            }
+        });
+    </script>
 </body>
 </html>
