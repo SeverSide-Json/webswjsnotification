@@ -5,7 +5,7 @@
       "title": "Chào mừng đến với Ladipage PWA",
       "body": "Cảm ơn bạn đã sử dụng ứng dụng của chúng tôi!",
       "icon": "https://severside-json.github.io/notification/icon-192x192.png",
-      "badge": "https://severside-json.github.io/notification/badge.png",
+      "badge": "https://severside-json.github.io/notification/icon-192x192.png",
       "vibrate": [100, 50, 100],
       "data": {
         "dateOfArrival": 1643673600000,
@@ -15,12 +15,12 @@
         {
           "action": "explore",
           "title": "Khám phá ngay",
-          "icon": "https://severside-json.github.io/notification/explore-icon.png"
+          "icon": "https://severside-json.github.io/notification/icon-192x192.png"
         },
         {
           "action": "close",
           "title": "Đóng",
-          "icon": "https://severside-json.github.io/notification/close-icon.png"
+          "icon": "https://severside-json.github.io/notification/icon-192x192.png"
         }
       ]
     },
@@ -28,8 +28,8 @@
       "id": "2",
       "title": "Ưu đãi mới!",
       "body": "Kiểm tra ưu đãi mới nhất của chúng tôi ngay hôm nay!",
-      "icon": "https://severside-json.github.io/notification/offer-icon.png",
-      "badge": "https://severside-json.github.io/notification/badge.png",
+      "icon": "https://severside-json.github.io/notification/icon-192x192.png",
+      "badge": "https://severside-json.github.io/notification/icon-192x192.png",
       "vibrate": [200, 100, 200],
       "data": {
         "dateOfArrival": 1643760000000,
@@ -39,7 +39,7 @@
         {
           "action": "viewOffer",
           "title": "Xem ưu đãi",
-          "icon": "https://severside-json.github.io/notification/view-icon.png"
+          "icon": "https://severside-json.github.io/notification/icon-192x192.png"
         }
       ]
     }
