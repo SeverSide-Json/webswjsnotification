@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Push Notification Demo</title>
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="./manifest.json">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -65,7 +65,7 @@
         async function registerPushNotification() {
             if ('serviceWorker' in navigator && 'PushManager' in window) {
                 try {
-                    const registration = await navigator.serviceWorker.register('/sw.js');
+                    const registration = await navigator.serviceWorker.register('./sw.js');
                     console.log('Service Worker registered', registration);
 
                     const subscription = await registration.pushManager.subscribe({
