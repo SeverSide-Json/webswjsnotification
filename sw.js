@@ -4,7 +4,7 @@ const CACHE_NAME = 'my-site-cache-v1';
 const urlsToCache = [
   'https://severside-json.github.io/webswjsnotification/',
   'https://severside-json.github.io/webswjsnotification/manifest.json',
-  'https://severside-json.github.io/notification/icon-192x192.png'
+  'https://severside-json.github.io/webswjsnotification/icon-192x192.png'
 ];
 
 self.addEventListener('install', event => {
