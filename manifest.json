@@ -1,47 +1,24 @@
 {
-  "notifications": [
+  "name": "My PWA Notification App",
+  "short_name": "PWA Notify",
+  "description": "A Progressive Web App with Push Notifications",
+  "start_url": "https://severside-json.github.io/webswjsnotification/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4A90E2",
+  "icons": [
     {
-      "id": "1",
-      "title": "Chào mừng đến với Ladipage PWA",
-      "body": "Cảm ơn bạn đã sử dụng ứng dụng của chúng tôi!",
-      "icon": "https://severside-json.github.io/webswjsnotification/icon-192x192.png",
-      "badge": "https://severside-json.github.io/webswjsnotification/icon-192x192.png",
-      "vibrate": [100, 50, 100],
-      "data": {
-        "dateOfArrival": 1643673600000,
-        "primaryKey": 1
-      },
-      "actions": [
-        {
-          "action": "explore",
-          "title": "Khám phá ngay",
-          "icon": "https://severside-json.github.io/webswjsnotification/icon-192x192.png"
-        },
-        {
-          "action": "close",
-          "title": "Đóng",
-          "icon": "https://severside-json.github.io/webswjsnotification/icon-192x192.png"
-        }
-      ]
-    },
-    {
-      "id": "2",
-      "title": "Ưu đãi mới!",
-      "body": "Kiểm tra ưu đãi mới nhất của chúng tôi ngay hôm nay!",
-      "icon": "https://severside-json.github.io/webswjsnotification/icon-192x192.png",
-      "badge": "https://severside-json.github.io/webswjsnotification/icon-192x192.png",
-      "vibrate": [200, 100, 200],
-      "data": {
-        "dateOfArrival": 1643760000000,
-        "primaryKey": 2
-      },
-      "actions": [
-        {
-          "action": "viewOffer",
-          "title": "Xem ưu đãi",
-          "icon": "https://severside-json.github.io/webswjsnotification/icon-192x192.png"
-        }
-      ]
+      "src": "https://severside-json.github.io/webswjsnotification/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
     }
-  ]
+  ],
+  "notifications": {
+    "default": {
+      "title": "New Notification",
+      "body": "You have a new notification",
+      "icon": "https://severside-json.github.io/webswjsnotification/icon-192x192.png",
+      "badge": "https://severside-json.github.io/webswjsnotification/icon-192x192.png"
+    }
+  }
 }
