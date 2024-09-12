@@ -1,26 +1,39 @@
-// sw.js
-
-const CACHE_NAME = 'my-site-cache-v1';
+const CACHE_NAME = 'pwa-notification-cache-v1';
 const urlsToCache = [
   'https://severside-json.github.io/webswjsnotification/',
   'https://severside-json.github.io/webswjsnotification/manifest.json',
   'https://severside-json.github.io/webswjsnotification/icon-192x192.png'
 ];
 
-self.addEventListener('install', event => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
+      .then((cache) => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
   );
 });
 
-self.addEventListener('fetch', event => {
+self.addEventListener('activate', (event) => {
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
+
+self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
-      .then(response => {
+      .then((response) => {
         if (response) {
           return response;
         }
@@ -29,41 +42,54 @@ self.addEventListener('fetch', event => {
   );
 });
 
-self.addEventListener('push', event => {
-  event.waitUntil(
-    fetch('https://severside-json.github.io/webswjsnotification/manifest.json')
-      .then(response => response.json())
-      .then(manifest => {
-        const pushData = event.data ? event.data.json() : {};
-        const notificationOptions = manifest.notifications[pushData.type] || manifest.notifications.default;
+self.addEventListener('push', (event) => {
+  let notificationData = {};
+  try {
+    notificationData = event.data.json();
+  } catch (e) {
+    notificationData = {
+      title: 'Thông báo mới',
+      body: event.data ? event.data.text() : 'Không có nội dung'
+    };
+  }
 
-        return self.registration.showNotification(notificationOptions.title, {
-          body: pushData.message || notificationOptions.body,
-          icon: notificationOptions.icon,
-          badge: notificationOptions.badge,
-          data: notificationOptions.data,
-          actions: notificationOptions.actions
-        });
-      })
+  const options = {
+    body: notificationData.body,
+    icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+    badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+    data: {
+      url: notificationData.url || 'https://severside-json.github.io/webswjsnotification/'
+    },
+    actions: [
+      {
+        action: 'explore',
+        title: 'Xem chi tiết'
+      },
+      {
+        action: 'close',
+        title: 'Đóng'
+      }
+    ]
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title, options)
   );
 });
 
-self.addEventListener('notificationclick', event => {
+self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const notificationData = event.notification.data;
-  let url = 'https://severside-json.github.io/webswjsnotification/';
-
-  if (notificationData && notificationData.url) {
-    url = notificationData.url;
+  if (event.action === 'explore') {
+    event.waitUntil(
+      clients.openWindow(event.notification.data.url)
+    );
+  } else if (event.action === 'close') {
+    // Không cần làm gì thêm vì notification đã được đóng
+  } else {
+    // Nếu người dùng click vào notification mà không chọn action cụ thể
+    event.waitUntil(
+      clients.openWindow(event.notification.data.url)
+    );
   }
-
-  if (event.action) {
-    console.log('Notification action clicked:', event.action);
-    // Thêm xử lý cho các hành động cụ thể nếu cần
-  }
-
-  event.waitUntil(
-    clients.openWindow(url)
-  );
 });
