@@ -1,6 +1,6 @@
 // sw.js
 
-const CACHE_NAME = 'my-site-cache-v1'; // Bạn có thể đổi tên này theo ý muốn
+const CACHE_NAME = 'my-site-cache-v1';
 const urlsToCache = [
   'https://severside-json.github.io/webswjsnotification/',
   'https://severside-json.github.io/webswjsnotification/manifest.json',
@@ -31,18 +31,18 @@ self.addEventListener('fetch', event => {
 
 self.addEventListener('push', event => {
   event.waitUntil(
-    fetch('https://severside-json.github.io/webswjsnotificatio/manifest.json')
+    fetch('https://severside-json.github.io/webswjsnotification/manifest.json')
       .then(response => response.json())
-      .then(data => {
-        const notification = data.notifications[0];
-        
-        return self.registration.showNotification(notification.title, {
-          body: notification.body,
-          icon: notification.icon,
-          badge: notification.badge,
-          vibrate: notification.vibrate,
-          data: notification.data,
-          actions: notification.actions
+      .then(manifest => {
+        const pushData = event.data ? event.data.json() : {};
+        const notificationOptions = manifest.notifications[pushData.type] || manifest.notifications.default;
+
+        return self.registration.showNotification(notificationOptions.title, {
+          body: pushData.message || notificationOptions.body,
+          icon: notificationOptions.icon,
+          badge: notificationOptions.badge,
+          data: notificationOptions.data,
+          actions: notificationOptions.actions
         });
       })
   );
@@ -51,15 +51,19 @@ self.addEventListener('push', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
 
-  if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow('https://severside-json.github.io/webswjsnotification/index.html')
-    );
-  } else if (event.action === 'close') {
-    // Notification đã được đóng, không cần làm gì thêm
-  } else {
-    event.waitUntil(
-      clients.openWindow('https://severside-json.github.io/webswjsnotification/index.html')
-    );
+  const notificationData = event.notification.data;
+  let url = 'https://severside-json.github.io/webswjsnotification/';
+
+  if (notificationData && notificationData.url) {
+    url = notificationData.url;
   }
+
+  if (event.action) {
+    console.log('Notification action clicked:', event.action);
+    // Thêm xử lý cho các hành động cụ thể nếu cần
+  }
+
+  event.waitUntil(
+    clients.openWindow(url)
+  );
 });
