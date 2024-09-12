@@ -2,8 +2,8 @@
 
 const CACHE_NAME = 'my-site-cache-v1'; // Bạn có thể đổi tên này theo ý muốn
 const urlsToCache = [
-  'https://severside-json.github.io/notification/',
-  'https://severside-json.github.io/notification/notifications.json',
+  'https://severside-json.github.io/webswjsnotification/',
+  'https://severside-json.github.io/webswjsnotification/manifest.json',
   'https://severside-json.github.io/notification/icon-192x192.png'
 ];
 
