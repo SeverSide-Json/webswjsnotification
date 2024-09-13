@@ -49,7 +49,7 @@
     </div>
 
     <script>
-       // main.js
+// main.js
 let swRegistration = null;
 
 // Đăng ký Service Worker
@@ -92,7 +92,7 @@ function initializeUI() {
 }
 
 function subscribeUser() {
-    const applicationServerKey = urlBase64ToUint8Array('BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA');
+    const applicationServerKey = urlBase64ToUint8Array('BIli1Z5E2BWeSUhrc-WT4RABkieFavhq_4dvFmfdu-G2Kb1O8zkq_qwfddqCreefI1kIevspnuR1p7S0iqy_ZG8');
     swRegistration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: applicationServerKey
@@ -112,33 +112,28 @@ function subscribeUser() {
 }
 
 function updateSubscriptionOnServer(subscription) {
-    // Gửi subscription đến server của bạn
-    console.log('Sending subscription to server:', subscription);
+    // Trong trường hợp này, chúng ta chỉ log subscription
+    console.log('Subscription info:', subscription);
 }
 
 function sendNotification() {
-    // Gửi yêu cầu đến server để gửi thông báo
-    fetch('https://severside-json.github.io/webswjsnotification/send-notification', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+            type: 'SHOW_NOTIFICATION',
             title: 'Thông báo nâng cao',
             body: 'Đây là một thông báo nâng cao từ PWA của bạn',
             icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png'
-        }),
-    })
-    .then(response => response.json())
-    .then(data => console.log('Notification sent:', data))
-    .catch((error) => console.error('Error:', error));
+        });
+    }
 }
 
 function scheduleAutomaticNotifications() {
     // Gửi message tới Service Worker để bắt đầu lên lịch thông báo
-    navigator.serviceWorker.controller.postMessage({
-        action: 'scheduleNotifications'
-    });
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+            action: 'scheduleNotifications'
+        });
+    }
 }
 
 function urlBase64ToUint8Array(base64String) {
