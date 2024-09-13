@@ -49,17 +49,15 @@ self.addEventListener('push', (event) => {
     notificationData = event.data.json();
   } catch (e) {
     notificationData = {
-      title: 'New Notification',
-      body: event.data ? event.data.text() : 'You have a new notification',
-      icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-      badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png'
+      title: 'Thông báo mới',
+      body: event.data ? event.data.text() : 'Không có nội dung'
     };
   }
 
   const options = {
     body: notificationData.body,
-    icon: notificationData.icon,
-    badge: notificationData.badge,
+    icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+    badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
     data: {
       url: notificationData.url || 'https://severside-json.github.io/webswjsnotification/'
     },
@@ -97,62 +95,32 @@ self.addEventListener('notificationclick', (event) => {
   }
 });
 
-let notificationCount = 0;
-const MAX_NOTIFICATIONS = 3;
-let notificationInterval;
-
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.action === 'skipWaiting') {
-    self.skipWaiting();
-  } else if (event.data && event.data.action === 'scheduleNotifications') {
-    scheduleNotifications();
-  } else if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
-    // Xử lý thông báo được gửi từ script chính
-    const { title, body, icon } = event.data;
-    self.registration.showNotification(title, { body, icon });
+  if (event.data && event.data.action === 'scheduleNotification') {
+    const delay = event.data.delay || 6000; // Mặc định là 6 giây nếu không có delay được chỉ định
+    scheduleNotification(delay);
   }
 });
 
-
-function scheduleNotifications() {
-  // Hủy bỏ interval cũ nếu có
-  if (notificationInterval) {
-    clearInterval(notificationInterval);
-  }
-
-  // Reset số lượng thông báo đã gửi
-  notificationCount = 0;
-
-  // Lên lịch gửi thông báo mỗi 1 phút
-  notificationInterval = setInterval(() => {
-    if (notificationCount < MAX_NOTIFICATIONS) {
-      sendAutomaticNotification();
-      notificationCount++;
-    } else {
-      clearInterval(notificationInterval);
-    }
-  }, 1000); // 1000 ms = 1 second
-}
-
-function sendAutomaticNotification() {
-  const options = {
-    body: `Đây là thông báo tự động số ${notificationCount + 1}`,
-    icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-    badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-    data: {
-      url: 'https://severside-json.github.io/webswjsnotification/'
-    },
-    actions: [
-      {
-        action: 'explore',
-        title: 'Xem chi tiết'
+function scheduleNotification(delay) {
+  setTimeout(() => {
+    self.registration.showNotification('Thông báo tự động', {
+      body: 'Đây là thông báo tự động sau khi bạn đăng ký.',
+      icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+      badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+      data: {
+        url: 'https://severside-json.github.io/webswjsnotification/'
       },
-      {
-        action: 'close',
-        title: 'Đóng'
-      }
-    ]
-  };
-
-  self.registration.showNotification('Thông báo tự động', options);
+      actions: [
+        {
+          action: 'explore',
+          title: 'Xem chi tiết'
+        },
+        {
+          action: 'close',
+          title: 'Đóng'
+        }
+      ]
+    });
+  }, delay);
 }
