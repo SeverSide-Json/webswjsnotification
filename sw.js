@@ -106,8 +106,13 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   } else if (event.data && event.data.action === 'scheduleNotifications') {
     scheduleNotifications();
+  } else if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
+    // Xử lý thông báo được gửi từ script chính
+    const { title, body, icon } = event.data;
+    self.registration.showNotification(title, { body, icon });
   }
 });
+
 
 function scheduleNotifications() {
   // Hủy bỏ interval cũ nếu có
