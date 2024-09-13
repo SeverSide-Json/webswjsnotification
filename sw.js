@@ -126,7 +126,7 @@ function scheduleNotifications() {
     } else {
       clearInterval(notificationInterval);
     }
-  }, 60000); // 60000 ms = 1 phút
+  }, 1000); // 1000 ms = 1 second
 }
 
 function sendAutomaticNotification() {
