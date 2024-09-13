@@ -1,3 +1,4 @@
+// sw.js
 const CACHE_NAME = 'pwa-notification-cache-v1';
 const urlsToCache = [
   'https://severside-json.github.io/webswjsnotification/',
@@ -48,15 +49,17 @@ self.addEventListener('push', (event) => {
     notificationData = event.data.json();
   } catch (e) {
     notificationData = {
-      title: 'Thông báo mới',
-      body: event.data ? event.data.text() : 'Không có nội dung'
+      title: 'New Notification',
+      body: event.data ? event.data.text() : 'You have a new notification',
+      icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+      badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png'
     };
   }
 
   const options = {
     body: notificationData.body,
-    icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-    badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+    icon: notificationData.icon,
+    badge: notificationData.badge,
     data: {
       url: notificationData.url || 'https://severside-json.github.io/webswjsnotification/'
     },
@@ -93,3 +96,58 @@ self.addEventListener('notificationclick', (event) => {
     );
   }
 });
+
+let notificationCount = 0;
+const MAX_NOTIFICATIONS = 3;
+let notificationInterval;
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.action === 'skipWaiting') {
+    self.skipWaiting();
+  } else if (event.data && event.data.action === 'scheduleNotifications') {
+    scheduleNotifications();
+  }
+});
+
+function scheduleNotifications() {
+  // Hủy bỏ interval cũ nếu có
+  if (notificationInterval) {
+    clearInterval(notificationInterval);
+  }
+
+  // Reset số lượng thông báo đã gửi
+  notificationCount = 0;
+
+  // Lên lịch gửi thông báo mỗi 1 phút
+  notificationInterval = setInterval(() => {
+    if (notificationCount < MAX_NOTIFICATIONS) {
+      sendAutomaticNotification();
+      notificationCount++;
+    } else {
+      clearInterval(notificationInterval);
+    }
+  }, 60000); // 60000 ms = 1 phút
+}
+
+function sendAutomaticNotification() {
+  const options = {
+    body: `Đây là thông báo tự động số ${notificationCount + 1}`,
+    icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+    badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+    data: {
+      url: 'https://severside-json.github.io/webswjsnotification/'
+    },
+    actions: [
+      {
+        action: 'explore',
+        title: 'Xem chi tiết'
+      },
+      {
+        action: 'close',
+        title: 'Đóng'
+      }
+    ]
+  };
+
+  self.registration.showNotification('Thông báo tự động', options);
+}
