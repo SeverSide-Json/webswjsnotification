@@ -6,7 +6,7 @@ const FULL_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?she
 let lastData = null;
 
 const urlsToCache = [
-  'https://severside-json.github.io/webswjsnotification/',
+  'https://severside-json.github.io/webswjsnotification/index.html',
   'https://severside-json.github.io/webswjsnotification/manifest.json',
   'https://severside-json.github.io/webswjsnotification/icon-192x192.png'
 ];
