@@ -1,3 +1,4 @@
+// sw.js
 const CACHE_NAME = 'pwa-notification-cache-v1';
 const urlsToCache = [
   'https://severside-json.github.io/webswjsnotification/',
@@ -6,7 +7,6 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installing.');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -17,7 +17,6 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activating.');
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -45,7 +44,6 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('push', (event) => {
-  console.log('Push event received:', event);
   let notificationData = {};
   try {
     notificationData = event.data.json();
@@ -61,7 +59,7 @@ self.addEventListener('push', (event) => {
     icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
     badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
     data: {
-      url: notificationData.url || 'https://severside-json.github.io/webswjsnotification/index.html'
+      url: notificationData.url || 'https://severside-json.github.io/webswjsnotification/'
     },
     actions: [
       {
@@ -81,7 +79,6 @@ self.addEventListener('push', (event) => {
 });
 
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked:', event.notification.tag);
   event.notification.close();
 
   if (event.action === 'explore') {
@@ -97,3 +94,33 @@ self.addEventListener('notificationclick', (event) => {
     );
   }
 });
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.action === 'scheduleNotification') {
+    const delay = event.data.delay || 0; // Default to 0 for immediate notification
+    scheduleNotification(delay);
+  }
+});
+
+function scheduleNotification(delay) {
+  setTimeout(() => {
+    self.registration.showNotification('Thông báo mới', {
+      body: 'Có dữ liệu mới cần xem xét.',
+      icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+      badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+      data: {
+        url: 'https://severside-json.github.io/webswjsnotification/'
+      },
+      actions: [
+        {
+          action: 'explore',
+          title: 'Xem chi tiết'
+        },
+        {
+          action: 'close',
+          title: 'Đóng'
+        }
+      ]
+    });
+  }, delay);
+}
