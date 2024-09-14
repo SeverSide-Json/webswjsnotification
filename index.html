@@ -1,104 +1,132 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My PWA Notification App</title>
-    <link rel="manifest" href="https://severside-json.github.io/webswjsnotification/manifest.json">
+    <title>My PWA Dashboard</title>
+    <link rel="manifest" href="https://severside-json.github.io/webswjsnotification/manifest.json"> <!-- Correct manifest inclusion -->
     <meta name="theme-color" content="#4A90E2">
     <link rel="apple-touch-icon" href="https://severside-json.github.io/webswjsnotification/icon-192x192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="PWA Notify">
+    <meta name="apple-mobile-web-app-title" content="PWA Dashboard">
     <style>
-        /* Styles remain the same */
+        /* (Same CSS as before) */
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>PWA Notification Demo</h1>
-        <p>Click the button below to subscribe to push notifications.</p>
-        <button id="subscribeButton">Subscribe to Notifications</button>
+        <h1>Dashboard Phê Duyệt</h1>
+        <div id="dataContainer">
+            <p>Loading data...</p>
+        </div>
+        <button id="subscribeButton">Subscribe to Notifications</button> <!-- Added for subscription -->
     </div>
 
     <script>
-        const API_KEY = 'AIzaSyDqRZQ5Ms9oosYxJk_2kVSM7Hj_ObcQdoU';
-        const SPREADSHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
-        const publicVapidKey = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA';
-        const RANGE = 'Sheet3!A2:I';
+    const googleSheetsApiKey = 'AIzaSyDqRZQ5Ms9oosYxJk_2kVSM7Hj_ObcQdoU'; // Replace with your actual API key
+    const sheetId = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c'; // Replace with your actual Sheet ID
+    const range = 'Sheet3!B2:E'; // Column B to E, starting from row 2 (skip headers)
+    let previousData = null; // Store previous data for comparison
 
-        let lastRowCount = 0;
-
-        function urlBase64ToUint8Array(base64String) {
-            const padding = '='.repeat((4 - base64String.length % 4) % 4);
-            const base64 = (base64String + padding)
-                .replace(/\-/g, '+')
-                .replace(/_/g, '/');
-
-            const rawData = window.atob(base64);
-            const outputArray = new Uint8Array(rawData.length);
-
-            for (let i = 0; i < rawData.length; ++i) {
-                outputArray[i] = rawData.charCodeAt(i);
-            }
-            return outputArray;
-        }
-
-        async function subscribeToPushNotifications() {
-            if ('serviceWorker' in navigator && 'PushManager' in window) {
-                try {
-                    const registration = await navigator.serviceWorker.register('./sw.js');
-                    console.log('Service Worker registered successfully:', registration);
-
-                    const subscription = await registration.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
-                    });
-
-                    console.log('Push Notification Subscription:', subscription);
-                    
-                    alert('Đăng ký nhận thông báo thành công!');
-                    startCheckingForNewData();
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Đăng ký nhận thông báo thất bại. Vui lòng thử lại.');
-                }
-            } else {
-                alert('Push notifications are not supported in your browser.');
-            }
-        }
-
-        async function fetchDataFromGoogleSheets() {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${API_KEY}`;
+    // Fetch data from Google Sheets API
+    async function fetchGoogleSheetData() {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${googleSheetsApiKey}`;
+        try {
             const response = await fetch(url);
             const data = await response.json();
-            return data.values || [];
-        }
+            const newData = data.values;
 
-        async function checkForNewData() {
-            const data = await fetchDataFromGoogleSheets();
-            if (data.length > lastRowCount) {
-                lastRowCount = data.length;
-                // Notify about new data
-                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                    navigator.serviceWorker.controller.postMessage({
-                        action: 'scheduleNotification',
-                        delay: 0  // Send immediately
-                    });
-                }
+            if (!previousData || JSON.stringify(previousData) !== JSON.stringify(newData)) {
+                // If new data is detected, update UI and send notification
+                displayData(newData);
+                sendPushNotification('Dữ liệu mới đã được cập nhật từ Google Sheets!');
+                previousData = newData; // Store the new data as previous
+            }
+        } catch (error) {
+            console.error('Error fetching Google Sheets data:', error);
+            document.getElementById('dataContainer').innerHTML = '<p>Failed to load data</p>';
+        }
+    }
+
+    // Function to display data in the dashboard
+    function displayData(data) {
+        const dataContainer = document.getElementById('dataContainer');
+        dataContainer.innerHTML = ''; // Clear the container
+
+        data.forEach((row, index) => {
+            const email = row[0];
+            const amount = row[1];
+            const time = row[2];
+            const date = row[3];
+
+            const recordElement = document.createElement('div');
+            recordElement.classList.add('record');
+
+            recordElement.innerHTML = `
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Amount:</strong> ${amount}</p>
+                <p><strong>Time:</strong> ${time}</p>
+                <p><strong>Date:</strong> ${date}</p>
+                <div class="buttons">
+                    <button class="approve" onclick="approve(${index})">Xác Nhận</button>
+                    <button class="reject" onclick="reject(${index})">Từ Chối</button>
+                </div>
+            `;
+
+            dataContainer.appendChild(recordElement);
+        });
+    }
+
+    // Function to send push notification
+    function sendPushNotification(message) {
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            navigator.serviceWorker.ready.then(registration => {
+                registration.active.postMessage({
+                    action: 'sendPushNotification',
+                    message: message
+                });
+            });
+        }
+    }
+
+    // Subscribe to push notifications
+    async function subscribeToPushNotifications() {
+        const publicVapidKey = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA'; // Replace with your VAPID key
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            try {
+                const registration = await navigator.serviceWorker.register('./sw.js');
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+                });
+                console.log('Push Notification Subscription:', subscription);
+                alert('Đăng ký nhận thông báo thành công!');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Đăng ký nhận thông báo thất bại.');
             }
         }
+    }
 
-        function startCheckingForNewData() {
-            setInterval(checkForNewData, 30000); // Check every 30 seconds
+    // Event listener for the subscribe button
+    document.getElementById('subscribeButton').addEventListener('click', subscribeToPushNotifications);
+
+    // Function to convert VAPID key
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
         }
+        return outputArray;
+    }
 
-        document.getElementById('subscribeButton').addEventListener('click', subscribeToPushNotifications);
-
-        // Start checking for new data when the page loads
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.ready.then(startCheckingForNewData);
-        }
+    // Auto-fetch data periodically
+    setInterval(fetchGoogleSheetData, 60000); // Fetch every minute
+    fetchGoogleSheetData(); // Fetch on page load
     </script>
 </body>
 </html>
