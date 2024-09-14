@@ -1,8 +1,8 @@
 {
-    "name": "PWA Dashboard",
-    "short_name": "Dashboard",
-    "description": "A Progressive Web App with Push Notifications for dashboard approval.",
-    "start_url": "https://severside-json.github.io/webswjsnotification/index.html",
+    "name": "My PWA Notification App",
+    "short_name": "PWA Notify",
+    "description": "A Progressive Web App with Push Notifications",
+    "start_url": "https://severside-json.github.io/webswjsnotification/",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#4A90E2",
@@ -13,4 +13,4 @@
         "type": "image/png"
       }
     ]
-}
+  }
