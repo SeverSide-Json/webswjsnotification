@@ -6,71 +6,35 @@ const urlsToCache = [
   'https://severside-json.github.io/webswjsnotification/icon-192x192.png'
 ];
 
+// Caching resources
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
   );
 });
 
-self.addEventListener('activate', (event) => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
+// Handling fetch requests
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then(response => {
+      return response || fetch(event.request);
     })
   );
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      })
-  );
-});
-
+// Handle push notifications
 self.addEventListener('push', (event) => {
   let notificationData = {};
   try {
     notificationData = event.data.json();
   } catch (e) {
-    notificationData = {
-      title: 'Thông báo mới',
-      body: event.data ? event.data.text() : 'Không có nội dung'
-    };
+    notificationData = { title: 'Thông báo mới', body: event.data.text() };
   }
 
   const options = {
     body: notificationData.body,
     icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
     badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-    data: {
-      url: notificationData.url || 'https://severside-json.github.io/webswjsnotification/'
-    },
-    actions: [
-      {
-        action: 'explore',
-        title: 'Xem chi tiết'
-      },
-      {
-        action: 'close',
-        title: 'Đóng'
-      }
-    ]
   };
 
   event.waitUntil(
@@ -78,49 +42,13 @@ self.addEventListener('push', (event) => {
   );
 });
 
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow(event.notification.data.url)
-    );
-  } else if (event.action === 'close') {
-    // Không cần làm gì thêm vì notification đã được đóng
-  } else {
-    // Nếu người dùng click vào notification mà không chọn action cụ thể
-    event.waitUntil(
-      clients.openWindow(event.notification.data.url)
-    );
-  }
-});
-
+// Receive message from the page to trigger push notifications
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.action === 'scheduleNotification') {
-    const delay = event.data.delay || 0; // Default to 0 for immediate notification
-    scheduleNotification(delay);
+  if (event.data && event.data.action === 'sendPushNotification') {
+    self.registration.showNotification('Dữ liệu mới', {
+      body: event.data.message,
+      icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+      badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png'
+    });
   }
 });
-
-function scheduleNotification(delay) {
-  setTimeout(() => {
-    self.registration.showNotification('Thông báo mới', {
-      body: 'Có dữ liệu mới cần xem xét.',
-      icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-      badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-      data: {
-        url: 'https://severside-json.github.io/webswjsnotification/'
-      },
-      actions: [
-        {
-          action: 'explore',
-          title: 'Xem chi tiết'
-        },
-        {
-          action: 'close',
-          title: 'Đóng'
-        }
-      ]
-    });
-  }, delay);
-}
