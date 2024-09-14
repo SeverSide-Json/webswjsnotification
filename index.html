@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,151 +13,245 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #dataContainer {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin-right: 10px;
+        }
+            /* Các style khác giữ nguyên */
+            #notificationBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #ff4081;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
+            z-index: 1000;
         }
-        .container {
-            text-align: center;
-            background-color: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        button {
-            background-color: #4A90E2;
-            border: none;
-            color: white;
-            padding: 15px 32px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-            border-radius: 4px;
+        #notificationBtn svg {
+            width: 30px;
+            height: 30px;
+            fill: white;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>PWA Notification Demo</h1>
-        <p>Click the button below to subscribe to push notifications.</p>
-        <button id="subscribeButton">Subscribe to Notifications</button>
-        <button id="advancedNotificationButton">Gửi Thông Báo Nâng Cao</button>
+    <h1>Dashboard Kiểm Duyệt</h1>
+    <div id="dataContainer"></div>
+    <div id="actionButtons" style="display: none;">
+        <button id="approveBtn">Xác nhận</button>
+        <button id="rejectBtn">Từ chối</button>
     </div>
+    
+    <button id="notificationBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M11.5,22C11.64,22 11.77,22 11.9,21.96C12.55,21.82 13.09,21.38 13.34,20.78C13.44,20.54 13.5,20.27 13.5,20H9.5A2,2 0 0,0 11.5,22M18,10.5C18,7.43 15.86,4.86 13,4.18V3.5A1.5,1.5 0 0,0 11.5,2A1.5,1.5 0 0,0 10,3.5V4.18C7.13,4.86 5,7.43 5,10.5V16L3,18V19H20V18L18,16M19.97,10H21.97C21.82,6.79 20.24,3.97 17.85,2.15L16.42,3.58C18.46,5 19.82,7.35 19.97,10M6.58,3.58L5.15,2.15C2.76,3.97 1.18,6.79 1,10H3C3.18,7.35 4.54,5 6.58,3.58Z"></path>
+        </svg>
+    </button>
 
     <script>
-// main.js
-const publicVapidKey = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA';
+        const API_KEY = 'AIzaSyDqRZQ5Ms9oosYxJk_2kVSM7Hj_ObcQdoU';
+        const SPREADSHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
+        const RANGE = 'Sheet3!A2:I';
+        const PUBLIC_VAPID_KEY = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA';
 
-function urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-        .replace(/\-/g, '+')
-        .replace(/_/g, '/');
+ let currentData = null;
+        let lastRowCount = 0;
 
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
 
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-}
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
 
-async function subscribeToPushNotifications() {
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-        try {
-            const registration = await navigator.serviceWorker.register('./sw.js');
-            console.log('Service Worker registered successfully:', registration);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
 
-            const subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
-            });
+        async function subscribeToPushNotifications() {
+            if ('serviceWorker' in navigator && 'PushManager' in window) {
+                try {
+                    const registration = await navigator.serviceWorker.register('./sw.js');
+                    console.log('Service Worker registered');
 
-            console.log('Push Notification Subscription:', subscription);
+                    const subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
+                    });
+
+                    console.log('Push notification subscription:', subscription);
+                    
+                    // Gửi subscription đến server (nếu cần)
+                    // await sendSubscriptionToServer(subscription);
+
+                    alert('Đăng ký nhận thông báo thành công!');
+                    document.getElementById('notificationBtn').style.display = 'none';
+                } catch (error) {
+                    console.error('Lỗi đăng ký nhận thông báo:', error);
+                    alert('Đăng ký nhận thông báo thất bại. Vui lòng thử lại.');
+                }
+            } else {
+                alert('Trình duyệt của bạn không hỗ trợ push notifications.');
+            }
+        }
+
+        document.getElementById('notificationBtn').addEventListener('click', subscribeToPushNotifications);
+
+        // Kiểm tra trạng thái đăng ký thông báo khi trang tải
+        async function checkNotificationStatus() {
+            if ('serviceWorker' in navigator && 'PushManager' in window) {
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.getSubscription();
+                if (subscription) {
+                    document.getElementById('notificationBtn').style.display = 'none';
+                }
+            }
+        }
+
+        // Hàm để lấy dữ liệu từ Google Sheets
+        async function fetchDataFromGoogleSheets() {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${API_KEY}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            return data.values || [];
+        }
+
+        // Hàm để tìm dữ liệu mới nhất chưa được xử lý
+        function findLatestUnprocessedData(data) {
+            for (let i = data.length - 1; i >= 0; i--) {
+                if (!data[i][8]) {  // Kiểm tra cột I (index 8) có trống không
+                    return {
+                        id: data[i][0] || '',
+                        email: data[i][1] || '',
+                        amount: data[i][2] || '',
+                        time: data[i][3] || '',
+                        date: data[i][4] || '',
+                        status: data[i][8] || '',
+                        rowIndex: i + 2  // +2 vì RANGE bắt đầu từ A2
+                    };
+                }
+            }
+            return null;
+        }
+
+        // Hàm để hiển thị dữ liệu
+        function displayData(entry) {
+            if (!entry) {
+                document.getElementById('dataContainer').innerHTML = '<p>Không có dữ liệu mới cần xử lý.</p>';
+                document.getElementById('actionButtons').style.display = 'none';
+                return;
+            }
+
+            const container = document.getElementById('dataContainer');
+            container.innerHTML = `
+                <h2>Thông tin giao dịch mới</h2>
+                <p>Email: ${entry.email}</p>
+                <p>Số tiền: ${entry.amount}</p>
+                <p>Thời gian: ${entry.time}</p>
+                <p>Ngày: ${entry.date}</p>
+            `;
+
+            currentData = entry;
+            document.getElementById('actionButtons').style.display = 'block';
+        }
+
+        // Hàm để cập nhật trạng thái trong Google Sheets
+        async function updateSheetStatus(status) {
+            const updateRange = `Sheet1!I${currentData.rowIndex}`;
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${updateRange}?valueInputOption=RAW&key=${API_KEY}`;
             
-            // Bắt đầu gửi thông báo tự động
-            scheduleAutomaticNotification(registration);
-
-            alert('Đăng ký nhận thông báo thành công!');
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Đăng ký nhận thông báo thất bại. Vui lòng thử lại.');
-        }
-    } else {
-        alert('Push notifications are not supported in your browser.');
-    }
-}
-
-function scheduleAutomaticNotification(registration) {
-    // Gửi message tới Service Worker để lên lịch gửi thông báo tự động sau 6 giây
-    registration.active.postMessage({
-        action: 'scheduleNotification',
-        delay: 6000 // 6 giây
-    });
-}
-
-async function sendAdvancedNotification() {
-    if ('serviceWorker' in navigator) {
-        try {
-            const registration = await navigator.serviceWorker.ready;
-            await registration.showNotification('Thông báo Quan trọng', {
-                body: 'Đây là nội dung thông báo quan trọng.',
-                icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-                badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-                image: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-                vibrate: [100, 50, 100],
-                tag: 'important-notification',
-                renotify: true,
-                requireInteraction: true,
-                silent: false,
-                timestamp: Date.now(),
-                data: {
-                    url: 'https://severside-json.github.io/webswjsnotification/'
+            await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
                 },
-                actions: [
-                    { action: 'view', title: 'Xem Chi Tiết' },
-                    { action: 'close', title: 'Đóng' }
-                ]
+                body: JSON.stringify({
+                    values: [[status]]
+                })
             });
-            console.log('Advanced notification sent');
-        } catch (error) {
-            console.error('Error sending advanced notification:', error);
         }
-    }
-}
 
-// Thêm event listeners cho các nút
-document.addEventListener('DOMContentLoaded', (event) => {
-    const subscribeButton = document.getElementById('subscribeButton');
-    const advancedNotificationButton = document.getElementById('advancedNotificationButton');
+        // Xử lý sự kiện khi nhấn nút Xác nhận
+        document.getElementById('approveBtn').addEventListener('click', async () => {
+            await updateSheetStatus('Done');
+            alert('Đã xác nhận giao dịch');
+            checkForNewData();
+        });
 
-    if (subscribeButton) {
-        subscribeButton.addEventListener('click', subscribeToPushNotifications);
-    }
+        // Xử lý sự kiện khi nhấn nút Từ chối
+        document.getElementById('rejectBtn').addEventListener('click', async () => {
+            await updateSheetStatus('Not Yet');
+            alert('Đã từ chối giao dịch');
+            checkForNewData();
+        });
 
-    if (advancedNotificationButton) {
-        advancedNotificationButton.addEventListener('click', sendAdvancedNotification);
-    }
-});
-
-// Kiểm tra xem Service Worker đã được đăng ký chưa khi trang tải
-window.addEventListener('load', async () => {
-    if ('serviceWorker' in navigator) {
-        try {
-            const registration = await navigator.serviceWorker.register('./sw.js');
-            console.log('Service Worker registered on page load:', registration);
-        } catch (error) {
-            console.error('Service Worker registration failed:', error);
+        // Hàm để kiểm tra dữ liệu mới và hiển thị thông báo
+        async function checkForNewData() {
+            const data = await fetchDataFromGoogleSheets();
+            
+            if (data.length > lastRowCount) {
+                lastRowCount = data.length;
+                const latestEntry = findLatestUnprocessedData(data);
+                
+                if (latestEntry && (!currentData || latestEntry.id !== currentData.id)) {
+                    displayData(latestEntry);
+                    showNotification('Vui lòng kiểm duyệt', 'Có giao dịch mới cần xác nhận');
+                    return true;
+                }
+            } else if (data.length < lastRowCount) {
+                lastRowCount = data.length;
+            }
+            
+            if (!currentData) {
+                displayData(null);
+            }
+            
+            return false;
         }
-    }
-});
+
+        // Hàm để hiển thị thông báo
+        function showNotification(title, body) {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        new Notification(title, { body });
+                    }
+                });
+            }
+        }
+
+        // Hàm thực hiện long polling
+        async function startLongPolling() {
+            while (true) {
+                const hasNewData = await checkForNewData();
+                if (hasNewData) {
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                } else {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+        }
+
+        // Bắt đầu long polling khi trang được tải
+        startLongPolling();
     </script>
 </body>
 </html>
