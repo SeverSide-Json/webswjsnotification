@@ -97,20 +97,133 @@
         Đồng ý nhận thông báo
     </button>
 
-    <script>
+ <script>
+        const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
+        const SHEET_RANGE = 'B2:E';
+        const FULL_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=Sheet3&range=${SHEET_RANGE}`;
         const VAPID_PUBLIC_KEY = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA';
+        const MIN_POLLING_INTERVAL = 1000; // 1 giây
+
+        let swRegistration = null;
+        let lastFetchTime = 0;
+        let lastEtag = null;
 
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
+            navigator.serviceWorker.register('sw.js')
                 .then((registration) => {
                     console.log('Service Worker đã được đăng ký thành công:', registration);
+                    swRegistration = registration;
                 })
                 .catch((error) => {
                     console.log('Đăng ký Service Worker thất bại:', error);
                 });
         }
 
-        const notificationButton = document.getElementById('notificationPermission');
+                async function fetchSheetData() {
+            try {
+                const response = await fetch(FULL_URL, {
+                    headers: lastEtag ? { 'If-None-Match': lastEtag } : {}
+                });
+
+                if (response.status === 304) {
+                    // Dữ liệu không thay đổi
+                    return false;
+                }
+
+                lastEtag = response.headers.get('ETag');
+                const text = await response.text();
+                const jsonData = JSON.parse(text.substr(47).slice(0, -2));
+                const sheetData = jsonData.table.rows.map(row => 
+                    row.c.map(cell => cell ? cell.v : '')
+                );
+                
+                displayData(sheetData);
+                saveDataToStorage(sheetData);
+                return true; // Dữ liệu đã thay đổi
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                return false;
+            }
+        }
+
+
+        function hasDataChanged(newData) {
+            const oldData = JSON.parse(localStorage.getItem('sheetData') || '[]');
+            return JSON.stringify(newData) !== JSON.stringify(oldData);
+        }
+
+         function displayData(data) {
+            const tableBody = document.querySelector('#dataTable tbody');
+            const fragment = document.createDocumentFragment();
+            data.forEach((row) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row[0] || ''}</td>
+                    <td>${row[1] || ''}</td>
+                    <td>${row[2] || ''}</td>
+                    <td>${row[3] || ''}</td>
+                `;
+                fragment.appendChild(tr);
+            });
+            tableBody.innerHTML = '';
+            tableBody.appendChild(fragment);
+        }
+
+        function saveDataToStorage(data) {
+            localStorage.setItem('sheetData', JSON.stringify(data));
+        }
+
+        function loadDataFromStorage() {
+            const storedData = localStorage.getItem('sheetData');
+            if (storedData) {
+                displayData(JSON.parse(storedData));
+            }
+        }
+
+        async function longPolling() {
+            const currentTime = Date.now();
+            const timeSinceLastFetch = currentTime - lastFetchTime;
+
+            if (timeSinceLastFetch >= MIN_POLLING_INTERVAL) {
+                lastFetchTime = currentTime;
+                const dataChanged = await fetchSheetData();
+                if (dataChanged) {
+                    // Dữ liệu đã thay đổi, fetch ngay lập tức
+                    requestAnimationFrame(longPolling);
+                } else {
+                    // Dữ liệu không thay đổi, đợi khoảng thời gian tối thiểu
+                    setTimeout(longPolling, MIN_POLLING_INTERVAL);
+                }
+            } else {
+                // Chưa đủ thời gian, đợi cho đến khi đủ khoảng thời gian tối thiểu
+                setTimeout(longPolling, MIN_POLLING_INTERVAL - timeSinceLastFetch);
+            }
+        }
+
+        document.getElementById('notificationPermission').addEventListener('click', () => {
+            Notification.requestPermission().then((permission) => {
+                if (permission === 'granted') {
+                    console.log('Notification permission granted');
+                    subscribeToPush();
+                }
+            });
+        });
+
+        function subscribeToPush() {
+            if (swRegistration) {
+                swRegistration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                })
+                .then((subscription) => {
+                    console.log('User is subscribed:', subscription);
+                    // Gửi subscription lên server của bạn
+                })
+                .catch((err) => {
+                    console.log('Failed to subscribe the user: ', err);
+                });
+            }
+        }
 
         function urlBase64ToUint8Array(base64String) {
             const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -127,69 +240,9 @@
             return outputArray;
         }
 
-        async function subscribeUserToPush() {
-            const registration = await navigator.serviceWorker.ready;
-            const subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-            });
-            
-            console.log('User is subscribed:', subscription);
-            
-            // Ở đây bạn sẽ gửi subscription object lên server của bạn
-            // await fetch('/api/save-subscription', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify(subscription)
-            // });
-        }
-
-        notificationButton.addEventListener('click', async () => {
-            if (Notification.permission === 'granted') {
-                console.log('Notification permission already granted');
-                await subscribeUserToPush();
-            } else {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    console.log('Notification permission granted');
-                    await subscribeUserToPush();
-                }
-            }
-            updateButtonState(Notification.permission);
-        });
-
-        function updateButtonState(state) {
-            if (state === 'granted') {
-                notificationButton.textContent = 'Đã đồng ý nhận thông báo';
-                notificationButton.disabled = true;
-            }
-        }
-
-        // Kiểm tra trạng thái quyền thông báo khi tải trang
-        if ('Notification' in window) {
-            updateButtonState(Notification.permission);
-        }
-
-        function displayData(data) {
-            const tableBody = document.querySelector('#dataTable tbody');
-            tableBody.innerHTML = '';
-            data.forEach((row) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${row[0] || ''}</td>
-                    <td>${row[1] || ''}</td>
-                    <td>${row[2] || ''}</td>
-                    <td>${row[3] || ''}</td>
-                `;
-                tableBody.appendChild(tr);
-            });
-        }
-
-        navigator.serviceWorker.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'NEW_DATA') {
-                displayData(event.data.data);
-            }
-        });
+        // Khởi động ứng dụng
+        loadDataFromStorage();
+        longPolling();
     </script>
 </body>
 </html>
