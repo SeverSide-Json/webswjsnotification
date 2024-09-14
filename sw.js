@@ -89,7 +89,7 @@ function notifyClients(data) {
   });
 
   self.registration.showNotification('Dữ liệu mới', {
-    body: 'Phê Duyệt Ngay',
+    body: 'Dữ Liệu Quan Trọng',
     icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
     badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
     vibrate: [100, 50, 100],
@@ -102,6 +102,29 @@ function notifyClients(data) {
     ]
   });
 }
+
+self.addEventListener('push', function(event) {
+  if (event.data) {
+    const pushData = event.data.json();
+    const options = {
+      body: pushData.body,
+      icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+      badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+      vibrate: [100, 50, 100],
+      data: {
+        url: pushData.url || self.registration.scope
+      },
+      actions: [
+        { action: 'view', title: 'Xem chi tiết' },
+        { action: 'close', title: 'Đóng' }
+      ]
+    };
+
+    event.waitUntil(
+      self.registration.showNotification(pushData.title, options)
+    );
+  }
+});
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
