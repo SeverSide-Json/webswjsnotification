@@ -134,7 +134,7 @@
                     console.log('Đăng ký nhận thông báo thành công:', subscription);
 
                     // Sau khi đăng ký, tự động kéo dữ liệu từ Google Sheets
-                    setInterval(fetchDataFromSheet, 1000); // Kiểm tra mỗi 5 giây
+                    setInterval(fetchDataFromSheet, 5000); // Kiểm tra mỗi 5 giây
                 } catch (error) {
                     console.error('Lỗi khi đăng ký nhận thông báo:', error);
                     alert('Đăng ký nhận thông báo thất bại. Vui lòng thử lại.');
