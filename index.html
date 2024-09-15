@@ -1,239 +1,188 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PWA Notification Demo</title>
-    <link rel="manifest" href="https://severside-json.github.io/webswjsnotification/manifest.json">
-    <meta name="theme-color" content="#4A90E2">
-    <meta name="description" content="A Progressive Web App demonstrating real-time notifications from Google Sheets">
-    <link rel="apple-touch-icon" href="icon-192x192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="PWA Notify">
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        h1 {
-            text-align: center;
-            color: #4A90E2;
-            margin-bottom: 20px;
-        }
-        #subscribeButton {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        #subscribeButton:hover {
-            background-color: #45a049;
-        }
-        #subscribeButton:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        #dataContainer {
-            margin-top: 20px;
-            background-color: white;
-            border-radius: 5px;
-            padding: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .data-item {
-            border-bottom: 1px solid #eee;
-            padding: 10px 0;
-        }
-        .data-item:last-child {
-            border-bottom: none;
-        }
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-            h1 {
-                font-size: 24px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PWA Real-time Notification</title>
+  <link rel="manifest" href="https://severside-json.github.io/webswjsnotification/manifest.json">
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    button {
+      padding: 5px 10px;
+      margin: 0 5px;
+    }
+  </style>
 </head>
 <body>
-    <h1>PWA Notification Demo</h1>
-    <button id="subscribeButton">Subscribe to Notifications</button>
-    <div id="dataContainer"></div>
+  <h1>Google Sheets Real-time Data</h1>
+  <button id="subscribe" onclick="subscribeUser()">Nhận thông báo</button>
+  <table id="data-table">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Tiền</th>
+        <th>Giờ</th>
+        <th>Tháng</th>
+        <th>Thao tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Dữ liệu sẽ được chèn vào đây -->
+    </tbody>
+  </table>
 
-    <script>
-        const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
-        const SHEET_RANGE = 'B2:E';
-        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=Sheet3&range=${SHEET_RANGE}`;
-        const VAPID_PUBLIC_KEY = 'BIli1Z5E2BWeSUhrc-WT4RABkieFavhq_4dvFmfdu-G2Kb1O8zkq_qwfddqCreefI1kIevspnuR1p7S0iqy_ZG8';
-        
-        let swRegistration = null;
-        let isSubscribed = false;
-        let lastDataLength = 0;
+  <script>
+    const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c'; // Thay bằng ID thực tế của Google Sheets
+    const SHEET_RANGE = 'B2:E';  // Thay bằng phạm vi bạn muốn
+    const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=Sheet3&range=${SHEET_RANGE}`;
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-                .then(function(registration) {
-                    console.log('Service Worker registered');
-                    swRegistration = registration;
-                    initializeUI();
-                });
-        }
+    let previousData = null;
 
-        function initializeUI() {
-            const subscribeButton = document.getElementById('subscribeButton');
-            subscribeButton.addEventListener('click', function() {
-                subscribeButton.disabled = true;
-                if (isSubscribed) {
-                    unsubscribeUser();
-                } else {
-                    subscribeUser();
-                }
+    // Hàm fetch dữ liệu từ Google Sheets
+    async function fetchSheetData() {
+      try {
+        const response = await fetch(SHEET_URL);
+        const text = await response.text();
+        const json = JSON.parse(text.substring(47).slice(0, -2)); // Xử lý JSON trả về
+        const rows = json.table.rows;
+        const newData = rows.map(row => row.c.map(cell => cell ? cell.v : ''));
+        return newData;
+      } catch (error) {
+        console.error('Lỗi khi lấy dữ liệu:', error);
+        return null;
+      }
+    }
+
+    // Hàm hiển thị dữ liệu trên bảng
+    function displayData(data) {
+      const tbody = document.querySelector('#data-table tbody');
+      tbody.innerHTML = ''; // Xóa dữ liệu cũ
+
+      data.forEach(row => {
+        const tr = document.createElement('tr');
+
+        // Chèn dữ liệu từng cột (Email - B, Tiền - C, Giờ - D, Tháng - E)
+        row.forEach(cellData => {
+          const td = document.createElement('td');
+          td.textContent = cellData;
+          tr.appendChild(td);
+        });
+
+        // Tạo cột thao tác với nút "Xác nhận" và "Từ chối"
+        const actionTd = document.createElement('td');
+        const confirmButton = document.createElement('button');
+        confirmButton.textContent = 'Xác nhận';
+        confirmButton.onclick = () => handleConfirm(row[0]); // Xử lý khi xác nhận
+        const rejectButton = document.createElement('button');
+        rejectButton.textContent = 'Từ chối';
+        rejectButton.onclick = () => handleReject(row[0]); // Xử lý khi từ chối
+
+        actionTd.appendChild(confirmButton);
+        actionTd.appendChild(rejectButton);
+        tr.appendChild(actionTd);
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Hàm xử lý xác nhận
+    function handleConfirm(email) {
+      alert(`Xác nhận: ${email}`);
+      // Bạn có thể thêm logic xử lý khi xác nhận tại đây
+    }
+
+    // Hàm xử lý từ chối
+    function handleReject(email) {
+      alert(`Từ chối: ${email}`);
+      // Bạn có thể thêm logic xử lý khi từ chối tại đây
+    }
+
+    // Hàm kiểm tra xem có dữ liệu mới không
+    async function checkForNewData() {
+      const newData = await fetchSheetData();
+      if (newData && JSON.stringify(newData) !== JSON.stringify(previousData)) {
+        displayData(newData);  // Hiển thị dữ liệu mới lên bảng
+        previousData = newData;
+
+        // Gửi thông báo nếu có dữ liệu mới
+        if (Notification.permission === 'granted') {
+          navigator.serviceWorker.ready.then((registration) => {
+            registration.active.postMessage({
+              action: 'scheduleNotification',
+              title: 'Dữ liệu mới từ Google Sheets',
+              body: 'Có dữ liệu mới được thêm vào!',
             });
-
-            swRegistration.pushManager.getSubscription()
-                .then(function(subscription) {
-                    isSubscribed = !(subscription === null);
-                    updateSubscriptionOnServer(subscription);
-                    updateBtn();
-                });
+          });
         }
+      }
+    }
 
-        function subscribeUser() {
-            const applicationServerKey = urlB64ToUint8Array(VAPID_PUBLIC_KEY);
-            swRegistration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: applicationServerKey
-            })
-            .then(function(subscription) {
-                console.log('User is subscribed:', subscription);
-                updateSubscriptionOnServer(subscription);
-                isSubscribed = true;
-                updateBtn();
-            })
-            .catch(function(err) {
-                console.log('Failed to subscribe the user: ', err);
-                updateBtn();
-            });
-        }
+    // Định kỳ kiểm tra dữ liệu mới sau mỗi 1 giây
+    setInterval(checkForNewData, 1000);
 
-        function unsubscribeUser() {
-            swRegistration.pushManager.getSubscription()
-            .then(function(subscription) {
-                if (subscription) {
-                    return subscription.unsubscribe();
-                }
-            })
-            .catch(function(error) {
-                console.log('Error unsubscribing', error);
-            })
-            .then(function() {
-                updateSubscriptionOnServer(null);
-                console.log('User is unsubscribed');
-                isSubscribed = false;
-                updateBtn();
-            });
-        }
+    // Đăng ký service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => {
+          console.log('Service Worker đã được đăng ký.');
+        })
+        .catch(error => {
+          console.error('Service Worker đăng ký thất bại:', error);
+        });
+    }
 
-        function updateSubscriptionOnServer(subscription) {
-            // TODO: Send subscription to your server
-            console.log('Subscription info:', subscription);
-        }
+    // Yêu cầu quyền thông báo từ người dùng
+    if (Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
 
-        function updateBtn() {
-            const subscribeButton = document.getElementById('subscribeButton');
-            if (Notification.permission === 'denied') {
-                subscribeButton.textContent = 'Push Messaging Blocked';
-                subscribeButton.disabled = true;
-                updateSubscriptionOnServer(null);
-                return;
-            }
+    // Chuyển VAPID key từ Base64 sang Uint8Array
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
+    }
 
-            if (isSubscribed) {
-                subscribeButton.textContent = 'Disable Push Messaging';
-            } else {
-                subscribeButton.textContent = 'Enable Push Messaging';
-            }
+    const applicationServerPublicKey = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA'; // Thay bằng public VAPID key
 
-            subscribeButton.disabled = false;
-        }
+    // Đăng ký người dùng để nhận thông báo
+    async function subscribeUser() {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(applicationServerPublicKey)
+        });
+        console.log('User is subscribed:', subscription);
+        // Gửi `subscription` này về server của bạn để lưu lại, nếu cần.
+        alert('Bạn đã đăng ký nhận thông báo.');
+      } catch (error) {
+        console.error('Failed to subscribe the user: ', error);
+      }
+    }
 
-        function urlB64ToUint8Array(base64String) {
-            const padding = '='.repeat((4 - base64String.length % 4) % 4);
-            const base64 = (base64String + padding)
-                .replace(/\-/g, '+')
-                .replace(/_/g, '/');
-
-            const rawData = window.atob(base64);
-            const outputArray = new Uint8Array(rawData.length);
-
-            for (let i = 0; i < rawData.length; ++i) {
-                outputArray[i] = rawData.charCodeAt(i);
-            }
-            return outputArray;
-        }
-
-        async function fetchData() {
-            try {
-                const response = await fetch(SHEET_URL);
-                const text = await response.text();
-                const data = JSON.parse(text.substr(47).slice(0, -2));
-                if (data.table && data.table.rows.length > lastDataLength) {
-                    const newData = data.table.rows.slice(lastDataLength);
-                    updateHTML(newData);
-                    lastDataLength = data.table.rows.length;
-                    sendNotification(`${newData.length} new entries added`);
-                }
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
-            setTimeout(fetchData, 1000);  // Poll every 1 second
-        }
-
-        function updateHTML(newData) {
-            const container = document.getElementById('dataContainer');
-            newData.forEach(row => {
-                const div = document.createElement('div');
-                div.className = 'data-item';
-                div.innerHTML = `
-                    <strong>Email:</strong> ${row.c[0].v}<br>
-                    <strong>Amount:</strong> ${row.c[1].v}<br>
-                    <strong>Time:</strong> ${row.c[2].v}<br>
-                    <strong>Date:</strong> ${row.c[3].v}
-                `;
-                container.insertBefore(div, container.firstChild);
-            });
-        }
-
-        function sendNotification(message) {
-            if (swRegistration && swRegistration.active) {
-                swRegistration.active.postMessage({
-                    type: 'NEW_DATA',
-                    message: message
-                });
-            }
-        }
-
-        // Start fetching data
-        fetchData();
-    </script>
+    // Bắt đầu fetch dữ liệu khi trang được tải
+    window.onload = () => {
+      checkForNewData();
+    };
+  </script>
 </body>
 </html>
