@@ -101,23 +101,9 @@
         const SHEET_RANGE = 'B2:E';
         const FULL_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=Sheet3&range=${SHEET_RANGE}`;
         const VAPID_PUBLIC_KEY = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA';
-        const MIN_POLLING_INTERVAL = 1000; // 1 giây
+        const UPDATE_INTERVAL = 1000; // Update every 1 second
 
-        let swRegistration = null;
-        let lastFetchTime = 0;
-        let lastEtag = null;
         let lastDataLength = 0;
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-                .then((registration) => {
-                    console.log('Service Worker đã được đăng ký thành công:', registration);
-                    swRegistration = registration;
-                })
-                .catch((error) => {
-                    console.log('Đăng ký Service Worker thất bại:', error);
-                });
-        }
 
         function urlBase64ToUint8Array(base64String) {
             const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -134,149 +120,112 @@
             return outputArray;
         }
 
-        async function subscribeUserToPush() {
-            const subscription = await swRegistration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-            });
-
-            console.log('User is subscribed:', subscription);
-
-            // Gửi subscription đến server của bạn
-            // await fetch('/api/save-subscription', {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //     },
-            //     body: JSON.stringify(subscription)
-            // });
+        async function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.register('./sw.js');
+                    console.log('Service Worker registered successfully:', registration);
+                    return registration;
+                } catch (error) {
+                    console.error('Service Worker registration failed:', error);
+                }
+            }
         }
 
-        async function fetchSheetData() {
+        async function subscribeToPushNotifications(registration) {
             try {
-                const response = await fetch(FULL_URL, {
-                    headers: lastEtag ? { 'If-None-Match': lastEtag } : {}
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
                 });
-
-                if (response.status === 304) {
-                    return false;
-                }
-
-                lastEtag = response.headers.get('ETag');
-                const text = await response.text();
-                const jsonData = JSON.parse(text.substr(47).slice(0, -2));
-                const sheetData = jsonData.table.rows.map(row => 
-                    row.c.map(cell => cell ? cell.v : '')
-                );
-                
-                if (sheetData.length !== lastDataLength) {
-                    displayData(sheetData);
-                    saveDataToStorage(sheetData);
-                    sendNotification('Dữ liệu mới', 'Có dữ liệu mới từ Google Sheets');
-                    lastDataLength = sheetData.length;
-                    return true;
-                }
-                
-                return false;
+                console.log('Push notification subscription successful:', subscription);
+                await sendSubscriptionToServer(subscription);
             } catch (error) {
-                console.error('Error fetching data:', error);
-                return false;
+                console.error('Push notification subscription failed:', error);
             }
         }
 
-        function displayData(data) {
-            const tableBody = document.querySelector('#dataTable tbody');
-            const fragment = document.createDocumentFragment();
-            data.forEach((row) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${row[0] || ''}</td>
-                    <td>${row[1] || ''}</td>
-                    <td>${row[2] || ''}</td>
-                    <td>${row[3] || ''}</td>
-                `;
-                fragment.appendChild(tr);
-            });
-            tableBody.innerHTML = '';
-            tableBody.appendChild(fragment);
-        }
-
-        function saveDataToStorage(data) {
-            localStorage.setItem('sheetData', JSON.stringify(data));
-        }
-
-        function loadDataFromStorage() {
-            const storedData = localStorage.getItem('sheetData');
-            if (storedData) {
-                displayData(JSON.parse(storedData));
-            }
-        }
-
-        async function longPolling() {
-            const currentTime = Date.now();
-            const timeSinceLastFetch = currentTime - lastFetchTime;
-
-            if (timeSinceLastFetch >= MIN_POLLING_INTERVAL) {
-                lastFetchTime = currentTime;
-                const dataChanged = await fetchSheetData();
-                if (dataChanged) {
-                    requestAnimationFrame(longPolling);
-                } else {
-                    setTimeout(longPolling, MIN_POLLING_INTERVAL);
-                }
-            } else {
-                setTimeout(longPolling, MIN_POLLING_INTERVAL - timeSinceLastFetch);
-            }
-        }
-
-         function sendNotification(title, body = 'Phê Duyệt Ngay') {
-            if (Notification.permission === 'granted') {
-                const notificationOptions = {
-                    body: body,
-                    icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-                    badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-                    image: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-                    vibrate: [100, 50, 100],
-                    tag: 'important-notification',
-                    renotify: true,
-                    requireInteraction: true,
-                    silent: false,
-                    timestamp: Date.now(),
-                    data: {
-                        url: 'https://severside-json.github.io/webswjsnotification/'
-                    },
-                    actions: [
-                        { action: 'view', title: 'Xem Chi Tiết' },
-                        { action: 'close', title: 'Đóng' }
-                    ]
-                };
-
-                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-                    navigator.serviceWorker.controller.postMessage({
-                        type: 'SHOW_NOTIFICATION',
-                        title: title,
-                        options: notificationOptions
-                    });
-                } else {
-                    new Notification(title, notificationOptions);
-                }
-            }
+        async function sendSubscriptionToServer(subscription) {
+            // Implement your logic to send the subscription to your server
+            console.log('Sending subscription to server:', subscription);
         }
 
         document.getElementById('notificationPermission').addEventListener('click', async () => {
-            if (Notification.permission === 'granted') {
-                await subscribeUserToPush();
-            } else {
+            if (Notification.permission !== 'granted') {
                 const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    await subscribeUserToPush();
+                if (permission !== 'granted') {
+                    console.log('Notification permission denied');
+                    return;
                 }
+            }
+            
+            const registration = await registerServiceWorker();
+            if (registration) {
+                await subscribeToPushNotifications(registration);
             }
         });
 
-        // Khởi động ứng dụng
-        loadDataFromStorage();
-        longPolling();
+        async function fetchSheetData() {
+            try {
+                const response = await fetch(FULL_URL);
+                const text = await response.text();
+                const data = JSON.parse(text.substr(47).slice(0, -2));
+                if (data.table && data.table.rows) {
+                    const newData = data.table.rows;
+                    if (newData.length > lastDataLength) {
+                        displayData(newData);
+                        sendNotification('Dữ liệu mới', `${newData.length - lastDataLength} dòng dữ liệu mới đã được thêm vào.`);
+                        lastDataLength = newData.length;
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        function displayData(rows) {
+            const tableBody = document.querySelector('#dataTable tbody');
+            tableBody.innerHTML = '';
+            rows.forEach((row, index) => {
+                if (index === 0) return; // Skip header row
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.c[0] ? row.c[0].v : ''}</td>
+                    <td>${row.c[1] ? row.c[1].v : ''}</td>
+                    <td>${row.c[2] ? row.c[2].v : ''}</td>
+                    <td>${row.c[3] ? row.c[3].v : ''}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function sendNotification(title, body) {
+            if ('serviceWorker' in navigator && 'PushManager' in window) {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification(title, {
+                        body: body,
+                        icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+                        badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+                        vibrate: [100, 50, 100],
+                        data: {
+                            url: window.location.href
+                        },
+                        actions: [
+                            { action: 'view', title: 'Xem Chi Tiết' },
+                            { action: 'close', title: 'Đóng' }
+                        ]
+                    });
+                });
+            }
+        }
+
+        function startRealtimeUpdates() {
+            fetchSheetData(); // Fetch immediately
+            setInterval(fetchSheetData, UPDATE_INTERVAL); // Then fetch every UPDATE_INTERVAL milliseconds
+        }
+
+        // Initialize the application
+        startRealtimeUpdates();
     </script>
 </body>
 </html>
