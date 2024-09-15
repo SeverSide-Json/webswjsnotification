@@ -1,18 +1,17 @@
 {
-  "name": "PWA Notification Demo",
-  "short_name": "PWA Notify",
-  "description": "A Progressive Web App demonstrating real-time notifications from Google Sheets",
+  "name": "Google Sheets Real-time Data",
+  "short_name": "Real-time Data",
+  "description": "Ứng dụng PWA hiển thị dữ liệu thời gian thực từ Google Sheets và gửi thông báo.",
   "start_url": "https://severside-json.github.io/webswjsnotification/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4A90E2",
+  "theme_color": "#4CAF50",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "https://severside-json.github.io/webswjsnotification/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
-  ],
-  "orientation": "any"
+  ]
 }
