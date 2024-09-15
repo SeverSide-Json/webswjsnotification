@@ -3,65 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="manifest" href="https://severside-json.github.io/webswjsnotification/manifest.json">
-    <title>Push Notification App</title>
+    <title>PWA Notification Demo</title>
+    <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#4A90E2">
-    <link rel="apple-touch-icon" href="https://severside-json.github.io/webswjsnotification/icon-192x192.png">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="A Progressive Web App demonstrating real-time notifications from Google Sheets">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="PWA Notify">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #4A90E2;
+        }
+        #notificationButton {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+        #dataContainer {
+            margin-top: 20px;
+        }
+        .data-item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+    </style>
 </head>
 <body>
-    <h1>Push Notification with Google Sheets</h1>
-    <button id="subscribe">Subscribe for Notifications</button>
-    <script>
-        const VAPID_PUBLIC_KEY = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA'; // Replace with your public VAPID key
+    <h1>PWA Notification Demo</h1>
+    <button id="notificationButton">Đồng ý nhận thông báo</button>
+    <div id="dataContainer"></div>
 
-        // Register the service worker
+    <script>
+        const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
+        const SHEET_RANGE = 'B2:E';
+        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=Sheet3&range=${SHEET_RANGE}`;
+        const VAPID_PUBLIC_KEY = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA';
+        let lastDataLength = 0;
+        let swRegistration = null;
+
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
                 .then(function(registration) {
-                    console.log('Service Worker registered with scope:', registration.scope);
-                })
-                .catch(function(error) {
-                    console.error('Service Worker registration failed:', error);
+                    console.log('Service Worker registered');
+                    swRegistration = registration;
+                    initializeUI();
+                    startRealtimeCheck();
                 });
         }
 
-        // Request permission for push notifications
-        document.getElementById('subscribe').addEventListener('click', async () => {
-            try {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    console.log('Notification permission granted.');
-                    // Register for push notifications
-                    const registration = await navigator.serviceWorker.ready;
-                    const subscription = await registration.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                    });
-                    console.log('Push Subscription:', JSON.stringify(subscription));
-
-                    // Send the subscription to the server (if you have a server-side to save the subscription)
-                    // In this case, we assume the server side is implemented without Node.js
+        function initializeUI() {
+            const notificationButton = document.getElementById('notificationButton');
+            notificationButton.addEventListener('click', () => {
+                if (Notification.permission === 'granted') {
+                    console.log('Notification permission already granted');
                 } else {
-                    console.log('Notification permission denied.');
+                    Notification.requestPermission().then((permission) => {
+                        if (permission === 'granted') {
+                            console.log('Notification permission granted');
+                            subscribeUserToPush();
+                        }
+                    });
                 }
-            } catch (error) {
-                console.error('Failed to get notification permission:', error);
-            }
-        });
+            });
+        }
 
-        // Convert VAPID key from base64 string to Uint8Array
-        function urlBase64ToUint8Array(base64String) {
+        function subscribeUserToPush() {
+            const applicationServerKey = urlB64ToUint8Array(VAPID_PUBLIC_KEY);
+            swRegistration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: applicationServerKey
+            })
+            .then(function(subscription) {
+                console.log('User is subscribed:', subscription);
+                updateSubscriptionOnServer(subscription);
+            })
+            .catch(function(err) {
+                console.log('Failed to subscribe the user: ', err);
+            });
+        }
+
+        function updateSubscriptionOnServer(subscription) {
+            // TODO: Send subscription to your server
+            console.log('Subscription info:', subscription);
+        }
+
+        function urlB64ToUint8Array(base64String) {
             const padding = '='.repeat((4 - base64String.length % 4) % 4);
-            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
+
             const rawData = window.atob(base64);
             const outputArray = new Uint8Array(rawData.length);
+
             for (let i = 0; i < rawData.length; ++i) {
                 outputArray[i] = rawData.charCodeAt(i);
             }
             return outputArray;
+        }
+
+        function startRealtimeCheck() {
+            fetchData();
+            setInterval(fetchData, 5000); // Check every 5 seconds
+        }
+
+        async function fetchData() {
+            try {
+                const response = await fetch(SHEET_URL);
+                const text = await response.text();
+                const data = JSON.parse(text.substr(47).slice(0, -2));
+                if (data.table && data.table.rows.length > lastDataLength) {
+                    const newData = data.table.rows.slice(lastDataLength);
+                    updateHTML(newData);
+                    lastDataLength = data.table.rows.length;
+                    notifyServiceWorker(newData);
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        function updateHTML(newData) {
+            const container = document.getElementById('dataContainer');
+            newData.forEach(row => {
+                const div = document.createElement('div');
+                div.className = 'data-item';
+                div.innerHTML = `
+                    <strong>Email:</strong> ${row.c[0].v}<br>
+                    <strong>Amount:</strong> ${row.c[1].v}<br>
+                    <strong>Time:</strong> ${row.c[2].v}<br>
+                    <strong>Date:</strong> ${row.c[3].v}
+                `;
+                container.insertBefore(div, container.firstChild);
+            });
+        }
+
+        function notifyServiceWorker(newData) {
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'NEW_DATA',
+                    data: newData
+                });
+            }
         }
     </script>
 </body>
