@@ -1,7 +1,7 @@
 // sw.js
 const CACHE_NAME = 'pwa-notification-cache-v1';
 const urlsToCache = [
-  'https://severside-json.github.io/webswjsnotification/',
+  'https://severside-json.github.io/webswjsnotification/index.html',
   'https://severside-json.github.io/webswjsnotification/manifest.json',
   'https://severside-json.github.io/webswjsnotification/icon-192x192.png'
 ];
