@@ -1,13 +1,11 @@
-// Service Worker (sw.js)
-
+// sw.js
 const CACHE_NAME = 'pwa-notification-cache-v1';
 const urlsToCache = [
-  'https://severside-json.github.io/webswjsnotification/',  // Thay bằng URL chính xác của trang web bạn
+  'https://severside-json.github.io/webswjsnotification/',
   'https://severside-json.github.io/webswjsnotification/manifest.json',
   'https://severside-json.github.io/webswjsnotification/icon-192x192.png'
 ];
 
-// Sự kiện cài đặt, lưu trữ các file tĩnh trong cache
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -18,7 +16,6 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Sự kiện activate, dọn dẹp các cache cũ
 self.addEventListener('activate', (event) => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
@@ -34,7 +31,6 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Sự kiện fetch, lấy dữ liệu từ cache nếu có
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
@@ -47,7 +43,6 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Sự kiện nhận thông báo đẩy từ máy chủ
 self.addEventListener('push', (event) => {
   let notificationData = {};
   try {
@@ -61,10 +56,10 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: notificationData.body,
-    icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',  // Thay icon của bạn ở đây
+    icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
     badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
     data: {
-      url: notificationData.url || '/'  // Thay URL điều hướng khi người dùng nhấn vào
+      url: notificationData.url || 'https://severside-json.github.io/webswjsnotification/'
     },
     actions: [
       {
@@ -83,7 +78,6 @@ self.addEventListener('push', (event) => {
   );
 });
 
-// Xử lý khi người dùng click vào thông báo
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
@@ -92,31 +86,41 @@ self.addEventListener('notificationclick', (event) => {
       clients.openWindow(event.notification.data.url)
     );
   } else if (event.action === 'close') {
-    // Không làm gì vì notification đã được đóng
+    // Không cần làm gì thêm vì notification đã được đóng
   } else {
+    // Nếu người dùng click vào notification mà không chọn action cụ thể
     event.waitUntil(
       clients.openWindow(event.notification.data.url)
     );
   }
 });
 
-// Xử lý message gửi từ client để hiển thị thông báo lên lịch
 self.addEventListener('message', (event) => {
   if (event.data && event.data.action === 'scheduleNotification') {
-    const title = event.data.title || 'Thông báo mới';
-    const body = event.data.body || 'Nội dung thông báo';
-
-    self.registration.showNotification(title, {
-      body: body,
-      icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',  // Thay icon của bạn ở đây
-      badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-      data: {
-        url: '/'  // Thay URL điều hướng khi người dùng nhấn vào
-      },
-      actions: [
-        { action: 'explore', title: 'Xem chi tiết' },
-        { action: 'close', title: 'Đóng' }
-      ]
-    });
+    const delay = event.data.delay || 6000; // Mặc định là 6 giây nếu không có delay được chỉ định
+    scheduleNotification(delay);
   }
 });
+
+function scheduleNotification(delay) {
+  setTimeout(() => {
+    self.registration.showNotification('Thông báo tự động', {
+      body: 'Đây là thông báo tự động sau khi bạn đăng ký.',
+      icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+      badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+      data: {
+        url: 'https://severside-json.github.io/webswjsnotification/'
+      },
+      actions: [
+        {
+          action: 'explore',
+          title: 'Xem chi tiết'
+        },
+        {
+          action: 'close',
+          title: 'Đóng'
+        }
+      ]
+    });
+  }, delay);
+}
