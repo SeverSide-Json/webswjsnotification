@@ -99,7 +99,7 @@ function scheduleAutomaticNotification(registration) {
     // Gửi message tới Service Worker để lên lịch gửi thông báo tự động sau 6 giây
     registration.active.postMessage({
         action: 'scheduleNotification',
-        delay: 1000 // 6 giây
+        delay: 4000 // 6 giây
     });
 }
 
