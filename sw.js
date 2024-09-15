@@ -50,8 +50,8 @@ self.addEventListener('push', (event) => {
   console.log('[Service Worker] Push Received.');
   
   let notificationData = {
-    title: 'Thông báo mới',
-    body: 'Phê Duyệt Ngay',
+    title: 'New Data Available',
+    body: 'New data has been added to the sheet.',
     icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
     badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
     data: {
@@ -61,9 +61,10 @@ self.addEventListener('push', (event) => {
 
   if (event.data) {
     try {
-      notificationData = {...notificationData, ...event.data.json()};
+      const data = event.data.json();
+      notificationData.body = `New entry: Email: ${data.email}, Amount: ${data.amount}, Time: ${data.time}, Date: ${data.date}`;
     } catch (e) {
-      console.error('Không thể parse dữ liệu push:', e);
+      console.error('Error parsing push data:', e);
     }
   }
 
@@ -73,13 +74,10 @@ self.addEventListener('push', (event) => {
       icon: notificationData.icon,
       badge: notificationData.badge,
       data: notificationData.data,
-      vibrate: [100, 50, 100],
       actions: [
-        { action: 'view', title: 'Xem Chi Tiết' },
-        { action: 'close', title: 'Đóng' }
-      ],
-      tag: 'renotify',
-      renotify: true
+        { action: 'view', title: 'View Details' },
+        { action: 'close', title: 'Close' }
+      ]
     })
   );
 });
@@ -93,17 +91,11 @@ self.addEventListener('notificationclick', (event) => {
     event.waitUntil(
       clients.openWindow(event.notification.data.url)
     );
-  } else {
-    // Nếu người dùng click vào notification mà không chọn action cụ thể
-    event.waitUntil(
-      clients.openWindow('https://severside-json.github.io/webswjsnotification/')
-    );
   }
 });
 
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
-    console.log('[Service Worker] Received notification request from the page');
-    self.registration.showNotification(event.data.title, event.data.options);
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
 });
