@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dữ liệu từ Google Sheets</title>
-    <link rel="manifest" href="https://severside-json.github.io/webswjsnotification/manifest.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4A90E2">
     <link rel="apple-touch-icon" href="https://severside-json.github.io/webswjsnotification/icon-192x192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,7 +15,7 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            padding-bottom: 80px; /* Tạo khoảng trống cho nút */
+            padding-bottom: 80px;
             background-color: #f0f0f0;
         }
         h1 {
@@ -35,7 +35,6 @@
             text-align: center;
             text-decoration: none;
             font-size: 16px;
-            margin: 10px 0;
             cursor: pointer;
             border-radius: 50px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
@@ -97,7 +96,7 @@
         Đồng ý nhận thông báo
     </button>
 
- <script>
+    <script>
         const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
         const SHEET_RANGE = 'B2:E';
         const FULL_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=Sheet3&range=${SHEET_RANGE}`;
@@ -107,9 +106,10 @@
         let swRegistration = null;
         let lastFetchTime = 0;
         let lastEtag = null;
+        let lastDataLength = 0;
 
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
+            navigator.serviceWorker.register('sw.js')
                 .then((registration) => {
                     console.log('Service Worker đã được đăng ký thành công:', registration);
                     swRegistration = registration;
@@ -119,14 +119,46 @@
                 });
         }
 
-                async function fetchSheetData() {
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
+
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        async function subscribeUserToPush() {
+            const subscription = await swRegistration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            });
+
+            console.log('User is subscribed:', subscription);
+
+            // Gửi subscription đến server của bạn
+            // await fetch('/api/save-subscription', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //     },
+            //     body: JSON.stringify(subscription)
+            // });
+        }
+
+        async function fetchSheetData() {
             try {
                 const response = await fetch(FULL_URL, {
                     headers: lastEtag ? { 'If-None-Match': lastEtag } : {}
                 });
 
                 if (response.status === 304) {
-                    // Dữ liệu không thay đổi
                     return false;
                 }
 
@@ -137,22 +169,22 @@
                     row.c.map(cell => cell ? cell.v : '')
                 );
                 
-                displayData(sheetData);
-                saveDataToStorage(sheetData);
-                return true; // Dữ liệu đã thay đổi
+                if (sheetData.length !== lastDataLength) {
+                    displayData(sheetData);
+                    saveDataToStorage(sheetData);
+                    sendNotification('Dữ liệu mới', 'Có dữ liệu mới từ Google Sheets');
+                    lastDataLength = sheetData.length;
+                    return true;
+                }
+                
+                return false;
             } catch (error) {
                 console.error('Error fetching data:', error);
                 return false;
             }
         }
 
-
-        function hasDataChanged(newData) {
-            const oldData = JSON.parse(localStorage.getItem('sheetData') || '[]');
-            return JSON.stringify(newData) !== JSON.stringify(oldData);
-        }
-
-         function displayData(data) {
+        function displayData(data) {
             const tableBody = document.querySelector('#dataTable tbody');
             const fragment = document.createDocumentFragment();
             data.forEach((row) => {
@@ -188,57 +220,59 @@
                 lastFetchTime = currentTime;
                 const dataChanged = await fetchSheetData();
                 if (dataChanged) {
-                    // Dữ liệu đã thay đổi, fetch ngay lập tức
                     requestAnimationFrame(longPolling);
                 } else {
-                    // Dữ liệu không thay đổi, đợi khoảng thời gian tối thiểu
                     setTimeout(longPolling, MIN_POLLING_INTERVAL);
                 }
             } else {
-                // Chưa đủ thời gian, đợi cho đến khi đủ khoảng thời gian tối thiểu
                 setTimeout(longPolling, MIN_POLLING_INTERVAL - timeSinceLastFetch);
             }
         }
 
-        document.getElementById('notificationPermission').addEventListener('click', () => {
-            Notification.requestPermission().then((permission) => {
-                if (permission === 'granted') {
-                    console.log('Notification permission granted');
-                    subscribeToPush();
+         function sendNotification(title, body = 'Phê Duyệt Ngay') {
+            if (Notification.permission === 'granted') {
+                const notificationOptions = {
+                    body: body,
+                    icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+                    badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+                    image: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+                    vibrate: [100, 50, 100],
+                    tag: 'important-notification',
+                    renotify: true,
+                    requireInteraction: true,
+                    silent: false,
+                    timestamp: Date.now(),
+                    data: {
+                        url: 'https://severside-json.github.io/webswjsnotification/'
+                    },
+                    actions: [
+                        { action: 'view', title: 'Xem Chi Tiết' },
+                        { action: 'close', title: 'Đóng' }
+                    ]
+                };
+
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'SHOW_NOTIFICATION',
+                        title: title,
+                        options: notificationOptions
+                    });
+                } else {
+                    new Notification(title, notificationOptions);
                 }
-            });
+            }
+        }
+
+        document.getElementById('notificationPermission').addEventListener('click', async () => {
+            if (Notification.permission === 'granted') {
+                await subscribeUserToPush();
+            } else {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    await subscribeUserToPush();
+                }
+            }
         });
-
-        function subscribeToPush() {
-            if (swRegistration) {
-                swRegistration.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                })
-                .then((subscription) => {
-                    console.log('User is subscribed:', subscription);
-                    // Gửi subscription lên server của bạn
-                })
-                .catch((err) => {
-                    console.log('Failed to subscribe the user: ', err);
-                });
-            }
-        }
-
-        function urlBase64ToUint8Array(base64String) {
-            const padding = '='.repeat((4 - base64String.length % 4) % 4);
-            const base64 = (base64String + padding)
-                .replace(/\-/g, '+')
-                .replace(/_/g, '/');
-
-            const rawData = window.atob(base64);
-            const outputArray = new Uint8Array(rawData.length);
-
-            for (let i = 0; i < rawData.length; ++i) {
-                outputArray[i] = rawData.charCodeAt(i);
-            }
-            return outputArray;
-        }
 
         // Khởi động ứng dụng
         loadDataFromStorage();
