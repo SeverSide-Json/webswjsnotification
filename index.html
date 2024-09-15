@@ -1,163 +1,68 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My PWA Notification App</title>
     <link rel="manifest" href="https://severside-json.github.io/webswjsnotification/manifest.json">
+    <title>Push Notification App</title>
     <meta name="theme-color" content="#4A90E2">
     <link rel="apple-touch-icon" href="https://severside-json.github.io/webswjsnotification/icon-192x192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="PWA Notify">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-        }
-        .container {
-            text-align: center;
-            background-color: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        button {
-            background-color: #4A90E2;
-            border: none;
-            color: white;
-            padding: 15px 32px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>PWA Notification Demo</h1>
-        <p>Click the button below to subscribe to push notifications.</p>
-        <button id="subscribeButton">Subscribe to Notifications</button>
-        <button id="advancedNotificationButton">Gửi Thông Báo Nâng Cao</button>
-    </div>
-
+    <h1>Push Notification with Google Sheets</h1>
+    <button id="subscribe">Subscribe for Notifications</button>
     <script>
-// main.js
-const publicVapidKey = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA';
+        const VAPID_PUBLIC_KEY = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA'; // Replace with your public VAPID key
 
-function urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-        .replace(/\-/g, '+')
-        .replace(/_/g, '/');
-
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-}
-
-async function subscribeToPushNotifications() {
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-        try {
-            const registration = await navigator.serviceWorker.register('./sw.js');
-            console.log('Service Worker registered successfully:', registration);
-
-            const subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
-            });
-
-            console.log('Push Notification Subscription:', subscription);
-            
-            // Bắt đầu gửi thông báo tự động
-            scheduleAutomaticNotification(registration);
-
-            alert('Đăng ký nhận thông báo thành công!');
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Đăng ký nhận thông báo thất bại. Vui lòng thử lại.');
+        // Register the service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(function(registration) {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                })
+                .catch(function(error) {
+                    console.error('Service Worker registration failed:', error);
+                });
         }
-    } else {
-        alert('Push notifications are not supported in your browser.');
-    }
-}
 
-function scheduleAutomaticNotification(registration) {
-    // Gửi message tới Service Worker để lên lịch gửi thông báo tự động sau 6 giây
-    registration.active.postMessage({
-        action: 'scheduleNotification',
-        delay: 4000 // 6 giây
-    });
-}
+        // Request permission for push notifications
+        document.getElementById('subscribe').addEventListener('click', async () => {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    console.log('Notification permission granted.');
+                    // Register for push notifications
+                    const registration = await navigator.serviceWorker.ready;
+                    const subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                    });
+                    console.log('Push Subscription:', JSON.stringify(subscription));
 
-async function sendAdvancedNotification() {
-    if ('serviceWorker' in navigator) {
-        try {
-            const registration = await navigator.serviceWorker.ready;
-            await registration.showNotification('Thông báo Quan trọng', {
-                body: 'Đây là nội dung thông báo quan trọng.',
-                icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-                badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-                image: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-                vibrate: [100, 50, 100],
-                tag: 'important-notification',
-                renotify: true,
-                requireInteraction: true,
-                silent: false,
-                timestamp: Date.now(),
-                data: {
-                    url: 'https://severside-json.github.io/webswjsnotification/'
-                },
-                actions: [
-                    { action: 'view', title: 'Xem Chi Tiết' },
-                    { action: 'close', title: 'Đóng' }
-                ]
-            });
-            console.log('Advanced notification sent');
-        } catch (error) {
-            console.error('Error sending advanced notification:', error);
+                    // Send the subscription to the server (if you have a server-side to save the subscription)
+                    // In this case, we assume the server side is implemented without Node.js
+                } else {
+                    console.log('Notification permission denied.');
+                }
+            } catch (error) {
+                console.error('Failed to get notification permission:', error);
+            }
+        });
+
+        // Convert VAPID key from base64 string to Uint8Array
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
         }
-    }
-}
-
-// Thêm event listeners cho các nút
-document.addEventListener('DOMContentLoaded', (event) => {
-    const subscribeButton = document.getElementById('subscribeButton');
-    const advancedNotificationButton = document.getElementById('advancedNotificationButton');
-
-    if (subscribeButton) {
-        subscribeButton.addEventListener('click', subscribeToPushNotifications);
-    }
-
-    if (advancedNotificationButton) {
-        advancedNotificationButton.addEventListener('click', sendAdvancedNotification);
-    }
-});
-
-// Kiểm tra xem Service Worker đã được đăng ký chưa khi trang tải
-window.addEventListener('load', async () => {
-    if ('serviceWorker' in navigator) {
-        try {
-            const registration = await navigator.serviceWorker.register('./sw.js');
-            console.log('Service Worker registered on page load:', registration);
-        } catch (error) {
-            console.error('Service Worker registration failed:', error);
-        }
-    }
-});
     </script>
 </body>
 </html>
