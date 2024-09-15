@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PWA Notification Demo</title>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="https://severside-json.github.io/webswjsnotification/manifest.json">
     <meta name="theme-color" content="#4A90E2">
-    <link rel="apple-touch-icon" href="https://severside-json.github.io/webswjsnotification/icon-192x192.png">
+    <meta name="description" content="A Progressive Web App demonstrating real-time notifications from Google Sheets">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="PWA Notify">
     <style>
         * {
             box-sizing: border-box;
@@ -24,31 +26,22 @@
             padding: 20px;
             background-color: #f4f4f4;
         }
-        header {
-            background-color: #4A90E2;
-            color: #fff;
-            text-align: center;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            border-radius: 5px;
-        }
         h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
+            text-align: center;
+            color: #4A90E2;
+            margin-bottom: 20px;
         }
         #subscribeButton {
+            display: block;
+            width: 100%;
+            padding: 10px;
             background-color: #4CAF50;
-            border: none;
             color: white;
-            padding: 15px 32px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
+            border: none;
             border-radius: 5px;
-            transition: background-color 0.3s;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
         #subscribeButton:hover {
             background-color: #45a049;
@@ -58,60 +51,39 @@
             cursor: not-allowed;
         }
         #dataContainer {
-            background-color: #fff;
-            padding: 20px;
+            margin-top: 20px;
+            background-color: white;
             border-radius: 5px;
+            padding: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-top: 2rem;
         }
         .data-item {
             border-bottom: 1px solid #eee;
             padding: 10px 0;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
         }
         .data-item:last-child {
             border-bottom: none;
-        }
-        .data-item span {
-            flex-basis: 48%;
-            margin-bottom: 5px;
         }
         @media (max-width: 600px) {
             body {
                 padding: 10px;
             }
             h1 {
-                font-size: 1.5rem;
-            }
-            #subscribeButton {
-                width: 100%;
-                padding: 12px 20px;
-            }
-            .data-item {
-                flex-direction: column;
-            }
-            .data-item span {
-                flex-basis: 100%;
+                font-size: 24px;
             }
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>PWA Notification Demo</h1>
-    </header>
-    <main>
-        <button id="subscribeButton">Subscribe to Notifications</button>
-        <div id="dataContainer"></div>
-    </main>
+    <h1>PWA Notification Demo</h1>
+    <button id="subscribeButton">Subscribe to Notifications</button>
+    <div id="dataContainer"></div>
 
     <script>
         const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
         const SHEET_RANGE = 'B2:E';
         const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=Sheet3&range=${SHEET_RANGE}`;
-        const VAPID_PUBLIC_KEY = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA';
+        const VAPID_PUBLIC_KEY = 'BIli1Z5E2BWeSUhrc-WT4RABkieFavhq_4dvFmfdu-G2Kb1O8zkq_qwfddqCreefI1kIevspnuR1p7S0iqy_ZG8';
         
         let swRegistration = null;
         let isSubscribed = false;
@@ -227,8 +199,8 @@
                 if (data.table && data.table.rows.length > lastDataLength) {
                     const newData = data.table.rows.slice(lastDataLength);
                     updateHTML(newData);
-                    newData.forEach(row => sendNotification(row));
                     lastDataLength = data.table.rows.length;
+                    sendNotification(`${newData.length} new entries added`);
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -242,24 +214,21 @@
                 const div = document.createElement('div');
                 div.className = 'data-item';
                 div.innerHTML = `
-                    <span>Email: ${row.c[0] ? row.c[0].v : ''}</span>
-                    <span>Amount: ${row.c[1] ? row.c[1].v : ''}</span>
-                    <span>Time: ${row.c[2] ? row.c[2].v : ''}</span>
-                    <span>Date: ${row.c[3] ? row.c[3].v : ''}</span>
+                    <strong>Email:</strong> ${row.c[0].v}<br>
+                    <strong>Amount:</strong> ${row.c[1].v}<br>
+                    <strong>Time:</strong> ${row.c[2].v}<br>
+                    <strong>Date:</strong> ${row.c[3].v}
                 `;
                 container.insertBefore(div, container.firstChild);
             });
         }
 
-        function sendNotification(newData) {
-            if (swRegistration && isSubscribed) {
-                const title = 'New Data Available';
-                const options = {
-                    body: `New entry: Email: ${newData.c[0] ? newData.c[0].v : ''}, Amount: ${newData.c[1] ? newData.c[1].v : ''}, Time: ${newData.c[2] ? newData.c[2].v : ''}, Date: ${newData.c[3] ? newData.c[3].v : ''}`,
-                    icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-                    badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png'
-                };
-                swRegistration.showNotification(title, options);
+        function sendNotification(message) {
+            if (swRegistration && swRegistration.active) {
+                swRegistration.active.postMessage({
+                    type: 'NEW_DATA',
+                    message: message
+                });
             }
         }
 
