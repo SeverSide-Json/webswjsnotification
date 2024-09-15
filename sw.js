@@ -1,12 +1,8 @@
-const CACHE_NAME = 'pwa-google-sheets-v1';
-const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
-const SHEET_TITLE = 'Sheet3'; // Thay đổi nếu cần
-const SHEET_RANGE = 'B2:E'; // Cập nhật phạm vi từ B2:E để bắt đầu từ hàng 2 và lấy các cột B, C, D, E
-const FULL_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_TITLE}&range=${SHEET_RANGE}`;
-let lastData = null;
+// sw.js
 
+const CACHE_NAME = 'pwa-notification-cache-v1';
 const urlsToCache = [
-  'https://severside-json.github.io/webswjsnotification/index.html',
+  'https://severside-json.github.io/webswjsnotification/',
   'https://severside-json.github.io/webswjsnotification/manifest.json',
   'https://severside-json.github.io/webswjsnotification/icon-192x192.png'
 ];
@@ -34,103 +30,66 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
+  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => {
-      startLongPolling();
     })
   );
 });
-
-function startLongPolling() {
-  fetchSheetData();
-}
-
-async function fetchSheetData() {
-  try {
-    const response = await fetch(FULL_URL);
-    const text = await response.text();
-    const data = JSON.parse(text.substring(47).slice(0, -2));
-    
-    if (data && data.table && data.table.rows) {
-      const formattedData = data.table.rows.map(row => row.c.map(cell => cell ? cell.v : ''));
-      
-      if (JSON.stringify(formattedData) !== JSON.stringify(lastData)) {
-        lastData = formattedData;
-        notifyClients(formattedData);
-      }
-    }
-  } catch (error) {
-    console.error('Error fetching data:', error);
-  }
-  
-  scheduleNextPoll();
-}
-
-function scheduleNextPoll() {
-  setTimeout(fetchSheetData, 1000); // Poll every 1 second
-}
-
-function notifyClients(data) {
-  self.clients.matchAll().then(clients => {
-    clients.forEach(client => {
-      client.postMessage({
-        type: 'NEW_DATA',
-        data: data
-      });
-    });
-  });
-
-  self.registration.showNotification('Dữ liệu mới', {
-    body: 'Phê Duyệt Ngay Nhé',
-    icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-    badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-    vibrate: [100, 50, 100],
-    data: {
-      url: self.registration.scope
-    },
-    actions: [
-      { action: 'view', title: 'Xem chi tiết' },
-      { action: 'close', title: 'Đóng' }
-    ]
-  });
-}
 
 self.addEventListener('push', function(event) {
   if (event.data) {
     const pushData = event.data.json();
     const options = {
-      body: pushData.body,
+      body: 'Phê Duyệt Ngay', // Nội dung mặc định
       icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
       badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+      image: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
       vibrate: [100, 50, 100],
+      tag: 'important-notification',
+      renotify: true,
+      requireInteraction: true,
+      silent: false,
+      timestamp: Date.now(),
       data: {
-        url: pushData.url || self.registration.scope
+        url: pushData.url || 'https://severside-json.github.io/webswjsnotification/'
       },
       actions: [
-        { action: 'view', title: 'Xem chi tiết' },
+        { action: 'view', title: 'Xem Chi Tiết' },
         { action: 'close', title: 'Đóng' }
       ]
     };
 
     event.waitUntil(
-      self.registration.showNotification(pushData.title, options)
+      self.registration.showNotification(pushData.title || 'Thông báo mới', options)
     );
   }
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+
   if (event.action === 'view') {
     event.waitUntil(
       clients.openWindow(event.notification.data.url)
     );
+  }
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
+    const title = event.data.title || 'Thông báo mới';
+    const options = {
+      ...event.data.options,
+      body: 'Phê Duyệt Ngay' // Luôn sử dụng nội dung mặc định
+    };
+    self.registration.showNotification(title, options);
   }
 });
