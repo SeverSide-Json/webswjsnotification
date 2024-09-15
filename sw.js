@@ -89,7 +89,7 @@ function notifyClients(data) {
   });
 
   self.registration.showNotification('Dữ liệu mới', {
-    body: 'Phê Duyệt Ngay',
+    body: 'Phê Duyệt Ngay Nhé',
     icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
     badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
     vibrate: [100, 50, 100],
