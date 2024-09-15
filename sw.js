@@ -48,7 +48,7 @@ self.addEventListener('push', function(event) {
   if (event.data) {
     const pushData = event.data.json();
     const options = {
-      body: 'Phê Duyệt Ngay', // Nội dung mặc định
+      body: 'Phê Duyệt Ngay Nhé', // Nội dung mặc định
       icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
       badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
       image: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
