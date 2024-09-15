@@ -98,12 +98,13 @@
 
     <script>
         const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
-        const SHEET_RANGE = 'B2:E';
+        const SHEET_RANGE = 'B1:E';
         const FULL_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=Sheet3&range=${SHEET_RANGE}`;
         const VAPID_PUBLIC_KEY = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA';
         const UPDATE_INTERVAL = 1000; // Update every 1 second
 
-        let lastDataLength = 0;
+          let lastDataLength = 0;
+        let swRegistration = null;
 
         function urlBase64ToUint8Array(base64String) {
             const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -123,46 +124,47 @@
         async function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 try {
-                    const registration = await navigator.serviceWorker.register('./sw.js');
-                    console.log('Service Worker registered successfully:', registration);
-                    return registration;
+                    swRegistration = await navigator.serviceWorker.register('/sw.js');
+                    console.log('Service Worker đăng ký thành công:', swRegistration);
+                    return swRegistration;
                 } catch (error) {
-                    console.error('Service Worker registration failed:', error);
+                    console.error('Đăng ký Service Worker thất bại:', error);
                 }
             }
         }
 
-        async function subscribeToPushNotifications(registration) {
+        async function subscribeToPushNotifications() {
             try {
-                const subscription = await registration.pushManager.subscribe({
+                const subscription = await swRegistration.pushManager.subscribe({
                     userVisibleOnly: true,
                     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
                 });
-                console.log('Push notification subscription successful:', subscription);
+                console.log('Đăng ký push notification thành công:', subscription);
                 await sendSubscriptionToServer(subscription);
             } catch (error) {
-                console.error('Push notification subscription failed:', error);
+                console.error('Đăng ký push notification thất bại:', error);
             }
         }
 
         async function sendSubscriptionToServer(subscription) {
-            // Implement your logic to send the subscription to your server
-            console.log('Sending subscription to server:', subscription);
+            // Implement logic to send the subscription to your server
+            console.log('Gửi subscription đến server:', subscription);
+            // Example: await fetch('/api/save-subscription', { method: 'POST', body: JSON.stringify(subscription) });
         }
 
         document.getElementById('notificationPermission').addEventListener('click', async () => {
             if (Notification.permission !== 'granted') {
                 const permission = await Notification.requestPermission();
                 if (permission !== 'granted') {
-                    console.log('Notification permission denied');
+                    console.log('Quyền thông báo bị từ chối');
                     return;
                 }
             }
             
-            const registration = await registerServiceWorker();
-            if (registration) {
-                await subscribeToPushNotifications(registration);
+            if (!swRegistration) {
+                await registerServiceWorker();
             }
+            await subscribeToPushNotifications();
         });
 
         async function fetchSheetData() {
@@ -174,12 +176,12 @@
                     const newData = data.table.rows;
                     if (newData.length > lastDataLength) {
                         displayData(newData);
-                        sendNotification('Dữ liệu mới', `${newData.length - lastDataLength} dòng dữ liệu mới đã được thêm vào.`);
+                        sendNotificationToSW('Dữ liệu mới', `${newData.length - lastDataLength} dòng dữ liệu mới đã được thêm vào.`);
                         lastDataLength = newData.length;
                     }
                 }
             } catch (error) {
-                console.error('Error fetching data:', error);
+                console.error('Lỗi khi fetch dữ liệu:', error);
             }
         }
 
@@ -187,7 +189,7 @@
             const tableBody = document.querySelector('#dataTable tbody');
             tableBody.innerHTML = '';
             rows.forEach((row, index) => {
-                if (index === 0) return; // Skip header row
+                if (index === 0) return; // Bỏ qua hàng tiêu đề
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${row.c[0] ? row.c[0].v : ''}</td>
@@ -199,10 +201,12 @@
             });
         }
 
-        function sendNotification(title, body) {
-            if ('serviceWorker' in navigator && 'PushManager' in window) {
-                navigator.serviceWorker.ready.then(registration => {
-                    registration.showNotification(title, {
+        function sendNotificationToSW(title, body) {
+            if (swRegistration) {
+                swRegistration.active.postMessage({
+                    type: 'SHOW_NOTIFICATION',
+                    title: title,
+                    options: {
                         body: body,
                         icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
                         badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
@@ -214,18 +218,20 @@
                             { action: 'view', title: 'Xem Chi Tiết' },
                             { action: 'close', title: 'Đóng' }
                         ]
-                    });
+                    }
                 });
             }
         }
 
         function startRealtimeUpdates() {
-            fetchSheetData(); // Fetch immediately
-            setInterval(fetchSheetData, UPDATE_INTERVAL); // Then fetch every UPDATE_INTERVAL milliseconds
+            fetchSheetData(); // Fetch ngay lập tức
+            setInterval(fetchSheetData, UPDATE_INTERVAL); // Sau đó fetch mỗi UPDATE_INTERVAL milliseconds
         }
 
-        // Initialize the application
-        startRealtimeUpdates();
+        // Khởi tạo ứng dụng
+        registerServiceWorker().then(() => {
+            startRealtimeUpdates();
+        });
     </script>
 </body>
 </html>
