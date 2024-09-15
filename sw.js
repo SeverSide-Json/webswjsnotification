@@ -97,7 +97,7 @@ self.addEventListener('notificationclick', (event) => {
 
 self.addEventListener('message', (event) => {
   if (event.data && event.data.action === 'scheduleNotification') {
-    const delay = event.data.delay || 6000; // Mặc định là 6 giây nếu không có delay được chỉ định
+    const delay = event.data.delay || 1000; // Mặc định là 6 giây nếu không có delay được chỉ định
     scheduleNotification(delay);
   }
 });
