@@ -17,6 +17,22 @@ self.addEventListener('install', (event) => {
   );
 });
 
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => {
+      return self.clients.claim();
+    })
+  );
+});
+
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
@@ -29,51 +45,47 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-self.addEventListener('activate', (event) => {
-  const cacheWhitelist = [CACHE_NAME];
+self.addEventListener('push', function(event) {
+  console.log('[Service Worker] Push Received.');
+
+  let notificationData = {
+    title: 'Thông báo mới',
+    body: 'Phê Duyệt Ngay',
+    icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+    badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
+    data: {
+      url: 'https://severside-json.github.io/webswjsnotification/'
+    }
+  };
+
+  if (event.data) {
+    try {
+      notificationData = {...notificationData, ...event.data.json()};
+    } catch (e) {
+      console.error('Không thể parse dữ liệu push:', e);
+    }
+  }
+
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
+    self.registration.showNotification(notificationData.title, {
+      body: notificationData.body,
+      icon: notificationData.icon,
+      badge: notificationData.badge,
+      data: notificationData.data,
+      vibrate: [100, 50, 100],
+      actions: [
+        { action: 'view', title: 'Xem Chi Tiết' },
+        { action: 'close', title: 'Đóng' }
+      ],
+      tag: 'renotify',
+      renotify: true
     })
   );
 });
 
-self.addEventListener('push', function(event) {
-  if (event.data) {
-    const pushData = event.data.json();
-    const options = {
-      body: 'Phê Duyệt Ngay Nhé', // Nội dung mặc định
-      icon: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-      badge: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-      image: 'https://severside-json.github.io/webswjsnotification/icon-192x192.png',
-      vibrate: [100, 50, 100],
-      tag: 'important-notification',
-      renotify: true,
-      requireInteraction: true,
-      silent: false,
-      timestamp: Date.now(),
-      data: {
-        url: pushData.url || 'https://severside-json.github.io/webswjsnotification/'
-      },
-      actions: [
-        { action: 'view', title: 'Xem Chi Tiết' },
-        { action: 'close', title: 'Đóng' }
-      ]
-    };
+self.addEventListener('notificationclick', function(event) {
+  console.log('[Service Worker] Notification click Received.');
 
-    event.waitUntil(
-      self.registration.showNotification(pushData.title || 'Thông báo mới', options)
-    );
-  }
-});
-
-self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
   if (event.action === 'view') {
@@ -83,13 +95,9 @@ self.addEventListener('notificationclick', (event) => {
   }
 });
 
-self.addEventListener('message', (event) => {
+self.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
-    const title = event.data.title || 'Thông báo mới';
-    const options = {
-      ...event.data.options,
-      body: 'Phê Duyệt Ngay' // Luôn sử dụng nội dung mặc định
-    };
-    self.registration.showNotification(title, options);
+    console.log('[Service Worker] Received notification request from the page');
+    self.registration.showNotification(event.data.title, event.data.options);
   }
 });
