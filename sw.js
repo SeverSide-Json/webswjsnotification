@@ -18,11 +18,12 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
+  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
             return caches.delete(cacheName);
           }
         })
@@ -45,9 +46,9 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-self.addEventListener('push', function(event) {
+self.addEventListener('push', (event) => {
   console.log('[Service Worker] Push Received.');
-
+  
   let notificationData = {
     title: 'Thông báo mới',
     body: 'Phê Duyệt Ngay',
@@ -60,8 +61,7 @@ self.addEventListener('push', function(event) {
 
   if (event.data) {
     try {
-      const pushData = event.data.json();
-      notificationData = {...notificationData, ...pushData};
+      notificationData = {...notificationData, ...event.data.json()};
     } catch (e) {
       console.error('Không thể parse dữ liệu push:', e);
     }
@@ -84,7 +84,7 @@ self.addEventListener('push', function(event) {
   );
 });
 
-self.addEventListener('notificationclick', function(event) {
+self.addEventListener('notificationclick', (event) => {
   console.log('[Service Worker] Notification click Received.');
 
   event.notification.close();
@@ -94,14 +94,14 @@ self.addEventListener('notificationclick', function(event) {
       clients.openWindow(event.notification.data.url)
     );
   } else {
-    // Nếu không có action cụ thể, mở trang chính
+    // Nếu người dùng click vào notification mà không chọn action cụ thể
     event.waitUntil(
       clients.openWindow('https://severside-json.github.io/webswjsnotification/')
     );
   }
 });
 
-self.addEventListener('message', function(event) {
+self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
     console.log('[Service Worker] Received notification request from the page');
     self.registration.showNotification(event.data.title, event.data.options);
