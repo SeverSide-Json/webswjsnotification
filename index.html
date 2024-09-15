@@ -124,7 +124,7 @@
         async function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
                 try {
-                    swRegistration = await navigator.serviceWorker.register('/sw.js');
+                    swRegistration = await navigator.serviceWorker.register('./sw.js');
                     console.log('Service Worker đăng ký thành công:', swRegistration);
                     return swRegistration;
                 } catch (error) {
