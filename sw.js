@@ -60,7 +60,8 @@ self.addEventListener('push', function(event) {
 
   if (event.data) {
     try {
-      notificationData = {...notificationData, ...event.data.json()};
+      const pushData = event.data.json();
+      notificationData = {...notificationData, ...pushData};
     } catch (e) {
       console.error('Không thể parse dữ liệu push:', e);
     }
@@ -91,6 +92,11 @@ self.addEventListener('notificationclick', function(event) {
   if (event.action === 'view') {
     event.waitUntil(
       clients.openWindow(event.notification.data.url)
+    );
+  } else {
+    // Nếu không có action cụ thể, mở trang chính
+    event.waitUntil(
+      clients.openWindow('https://severside-json.github.io/webswjsnotification/')
     );
   }
 });
