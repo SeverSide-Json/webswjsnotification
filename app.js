@@ -55,21 +55,28 @@ function createDashboardItem(data) {
     const [stt, email, amount, time, date, userToken] = data;
     const container = document.createElement('div');
     container.className = 'dashboard-item';
+
+    // Định dạng số tiền
+    const formattedAmount = new Intl.NumberFormat('vi-VN').format(amount);
+
+    // Định dạng ngày tháng
+    const formattedDate = formatDate(date);
+
     container.innerHTML = `
         <div class="item-header">
             <span class="item-id">ID: ${stt}</span>
-            <span class="item-date">${date}</span>
+            <span class="item-date">${formattedDate}</span>
         </div>
         <div class="item-body">
             <div class="item-info">
                 <div class="item-email">${email}</div>
-                <div class="item-amount">Amount: $${amount}</div>
-                <div class="item-time">Time: ${time}</div>
+                <div class="item-amount">Số tiền: ${formattedAmount} VNĐ</div>
+                <div class="item-time">Thời gian: ${time}</div>
             </div>
         </div>
         <div class="item-footer">
-            <button class="action-button confirm-button">Approve</button>
-            <button class="action-button reject-button">Reject</button>
+            <button class="action-button confirm-button">Chấp nhận</button>
+            <button class="action-button reject-button">Từ chối</button>
         </div>
     `;
 
@@ -77,6 +84,12 @@ function createDashboardItem(data) {
     container.querySelector('.reject-button').addEventListener('click', () => handleAction(data, 'reject'));
 
     return container;
+}
+
+// Hàm hỗ trợ để định dạng ngày tháng
+function formatDate(dateString) {
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
 }
 
 function handleAction(data, action) {
