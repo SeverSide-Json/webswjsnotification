@@ -5,21 +5,6 @@ const POLL_INTERVAL = 1000; // 1 second
 
 let currentEtag = null;
 
-// Cập nhật hàm formatDate
-function formatDate(dateValue) {
-    if (dateValue instanceof Date) {
-        // Nếu là đối tượng Date
-        return `${dateValue.getDate().toString().padStart(2, '0')}/${(dateValue.getMonth() + 1).toString().padStart(2, '0')}/${dateValue.getFullYear()}`;
-    } else if (typeof dateValue === 'string') {
-        // Nếu là chuỗi, giả sử định dạng là 'YYYY-MM-DD'
-        const [year, month, day] = dateValue.split('-');
-        return `${day}/${month}/${year}`;
-    } else {
-        // Trường hợp không xác định, trả về chuỗi gốc hoặc thông báo lỗi
-        return 'Invalid Date';
-    }
-}
-
 function fetchSheetData() {
     const FULL_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_TITLE}&range=${SHEET_RANGE}`;
     
@@ -66,7 +51,31 @@ function longPoll() {
     });
 }
 
-// Cập nhật hàm createDashboardItem
+// Cập nhật hàm formatDate trong app.js
+function formatDate(dateValue) {
+    if (dateValue instanceof Date) {
+        // Nếu là đối tượng Date
+        return `${dateValue.getDate().toString().padStart(2, '0')}/${(dateValue.getMonth() + 1).toString().padStart(2, '0')}/${dateValue.getFullYear()}`;
+    } else if (typeof dateValue === 'string') {
+        // Nếu là chuỗi, kiểm tra xem có phải là chuỗi Date không
+        if (dateValue.startsWith('Date(')) {
+            // Xử lý chuỗi Date(2024,8,18)
+            const parts = dateValue.slice(5, -1).split(',');
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const day = parseInt(parts[2]);
+            return `${day.toString().padStart(2, '0')}/${(month + 1).toString().padStart(2, '0')}/${year}`;
+        }
+        // Nếu là chuỗi ngày tháng thông thường
+        const [year, month, day] = dateValue.split('-');
+        return `${day}/${month}/${year}`;
+    } else {
+        // Trường hợp không xác định, trả về chuỗi gốc hoặc thông báo lỗi
+        return 'Invalid Date';
+    }
+}
+
+// Cập nhật hàm createDashboardItem để sử dụng hàm formatDate mới
 function createDashboardItem(data) {
     const [stt, email, amount, time, date, userToken] = data;
     const container = document.createElement('div');
