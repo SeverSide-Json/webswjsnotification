@@ -5,6 +5,21 @@ const POLL_INTERVAL = 1000; // 1 second
 
 let currentEtag = null;
 
+// Cập nhật hàm formatDate
+function formatDate(dateValue) {
+    if (dateValue instanceof Date) {
+        // Nếu là đối tượng Date
+        return `${dateValue.getDate().toString().padStart(2, '0')}/${(dateValue.getMonth() + 1).toString().padStart(2, '0')}/${dateValue.getFullYear()}`;
+    } else if (typeof dateValue === 'string') {
+        // Nếu là chuỗi, giả sử định dạng là 'YYYY-MM-DD'
+        const [year, month, day] = dateValue.split('-');
+        return `${day}/${month}/${year}`;
+    } else {
+        // Trường hợp không xác định, trả về chuỗi gốc hoặc thông báo lỗi
+        return 'Invalid Date';
+    }
+}
+
 function fetchSheetData() {
     const FULL_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_TITLE}&range=${SHEET_RANGE}`;
     
@@ -86,20 +101,7 @@ function createDashboardItem(data) {
 
     return container;
 }
-// Cập nhật hàm formatDate
-function formatDate(dateValue) {
-    if (dateValue instanceof Date) {
-        // Nếu là đối tượng Date
-        return `${dateValue.getDate().toString().padStart(2, '0')}/${(dateValue.getMonth() + 1).toString().padStart(2, '0')}/${dateValue.getFullYear()}`;
-    } else if (typeof dateValue === 'string') {
-        // Nếu là chuỗi, giả sử định dạng là 'YYYY-MM-DD'
-        const [year, month, day] = dateValue.split('-');
-        return `${day}/${month}/${year}`;
-    } else {
-        // Trường hợp không xác định, trả về chuỗi gốc hoặc thông báo lỗi
-        return 'Invalid Date';
-    }
-}
+
 function handleAction(data, action) {
     const [stt, email, amount] = data;
     const statusI = action === 'confirm' ? 'Done' : 'No';
