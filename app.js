@@ -1,4 +1,4 @@
-const SHEET_ID = 'YOUR_GOOGLE_SHEET_ID';
+const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
 const SHEET_TITLE = 'Sheet3';
 const SHEET_RANGE = 'A:F';
 const POLL_INTERVAL = 1000; // 1 second
