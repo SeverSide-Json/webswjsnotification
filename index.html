@@ -3,164 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PWA Notification Demo</title>
-    <link rel="manifest" href="./manifest.json">
+    <title>Approval Dashboard</title>
+      <link rel="manifest" href="https://severside-json.github.io/webswjsnotification/manifest.json">
     <meta name="theme-color" content="#4A90E2">
-    <meta name="description" content="A Progressive Web App demonstrating real-time notifications from Google Sheets">
-    <link rel="apple-touch-icon" href="icon-192x192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="https://severside-json.github.io/webswjsnotification/icon-192x192.png">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="PWA Notify">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        h1 {
-            color: #4A90E2;
-        }
-        #notificationButton {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            padding: 15px 32px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-        }
-        #dataContainer {
-            margin-top: 20px;
-        }
-        .data-item {
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: #f9f9f9;
-        }
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 20px;
+}
+
+.dashboard-item {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.item-header {
+    background-color: #f8f9fa;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.item-id {
+    font-weight: bold;
+}
+
+.item-date {
+    color: #6c757d;
+}
+
+.item-body {
+    padding: 15px;
+}
+
+.item-email {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.item-amount, .item-time {
+    color: #495057;
+    margin-bottom: 3px;
+}
+
+.item-footer {
+    padding: 15px;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.action-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.confirm-button {
+    background-color: #28a745;
+    color: white;
+    margin-right: 10px;
+}
+
+.reject-button {
+    background-color: #dc3545;
+    color: white;
+}
+
+.action-button:hover {
+    opacity: 0.9;
+}
     </style>
 </head>
 <body>
-    <h1>PWA Notification Demo</h1>
-    <button id="notificationButton">Đồng ý nhận thông báo</button>
-    <div id="dataContainer"></div>
-
+    <div id="dashboard-container"></div>
+    <script"></script>
     <script>
-        const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
-        const SHEET_RANGE = 'B2:E';
-        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=Sheet3&range=${SHEET_RANGE}`;
-        const VAPID_PUBLIC_KEY = 'BB9wlVPnErCwl5r1OA-H2TiGOBhjpgQiOOfGSbeHq0RYT1Z88AjrAxZJ-sQYccv63dcK3NT-H70xFV0bVBaJOCA';
-        let lastDataLength = 0;
-        let swRegistration = null;
-
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
-                .then(function(registration) {
-                    console.log('Service Worker registered');
-                    swRegistration = registration;
-                    initializeUI();
-                    startRealtimeCheck();
-                });
-        }
-
-        function initializeUI() {
-            const notificationButton = document.getElementById('notificationButton');
-            notificationButton.addEventListener('click', () => {
-                if (Notification.permission === 'granted') {
-                    console.log('Notification permission already granted');
-                } else {
-                    Notification.requestPermission().then((permission) => {
-                        if (permission === 'granted') {
-                            console.log('Notification permission granted');
-                            subscribeUserToPush();
-                        }
-                    });
-                }
-            });
-        }
-
-        function subscribeUserToPush() {
-            const applicationServerKey = urlB64ToUint8Array(VAPID_PUBLIC_KEY);
-            swRegistration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: applicationServerKey
-            })
-            .then(function(subscription) {
-                console.log('User is subscribed:', subscription);
-                updateSubscriptionOnServer(subscription);
-            })
-            .catch(function(err) {
-                console.log('Failed to subscribe the user: ', err);
-            });
-        }
-
-        function updateSubscriptionOnServer(subscription) {
-            // TODO: Send subscription to your server
-            console.log('Subscription info:', subscription);
-        }
-
-        function urlB64ToUint8Array(base64String) {
-            const padding = '='.repeat((4 - base64String.length % 4) % 4);
-            const base64 = (base64String + padding)
-                .replace(/\-/g, '+')
-                .replace(/_/g, '/');
-
-            const rawData = window.atob(base64);
-            const outputArray = new Uint8Array(rawData.length);
-
-            for (let i = 0; i < rawData.length; ++i) {
-                outputArray[i] = rawData.charCodeAt(i);
-            }
-            return outputArray;
-        }
-
-        function startRealtimeCheck() {
-            fetchData();
-            setInterval(fetchData, 5000); // Check every 5 seconds
-        }
-
-        async function fetchData() {
-            try {
-                const response = await fetch(SHEET_URL);
-                const text = await response.text();
-                const data = JSON.parse(text.substr(47).slice(0, -2));
-                if (data.table && data.table.rows.length > lastDataLength) {
-                    const newData = data.table.rows.slice(lastDataLength);
-                    updateHTML(newData);
-                    lastDataLength = data.table.rows.length;
-                    notifyServiceWorker(newData);
-                }
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
-        }
-
-        function updateHTML(newData) {
-            const container = document.getElementById('dataContainer');
-            newData.forEach(row => {
-                const div = document.createElement('div');
-                div.className = 'data-item';
-                div.innerHTML = `
-                    <strong>Email:</strong> ${row.c[0].v}<br>
-                    <strong>Amount:</strong> ${row.c[1].v}<br>
-                    <strong>Time:</strong> ${row.c[2].v}<br>
-                    <strong>Date:</strong> ${row.c[3].v}
-                `;
-                container.insertBefore(div, container.firstChild);
-            });
-        }
-
-        function notifyServiceWorker(newData) {
-            if (navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({
-                    type: 'NEW_DATA',
-                    data: newData
-                });
-            }
+                .then((reg) => console.log('Service worker registered.', reg))
+                .catch((err) => console.log('Service worker registration failed.', err));
         }
     </script>
 </body>
