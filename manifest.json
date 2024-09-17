@@ -1,6 +1,6 @@
 {
-    "name": "My PWA Notification App",
-    "short_name": "PWA Notify",
+    "name": "Dash Board App",
+    "short_name": "PWA Dash Board App",
     "description": "A Progressive Web App with Push Notifications",
     "start_url": "https://severside-json.github.io/webswjsnotification/",
     "display": "standalone",
