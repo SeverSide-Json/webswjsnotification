@@ -119,6 +119,7 @@ function handleAction(data, action) {
     // Gửi yêu cầu POST đến Google Apps Script để cập nhật trạng thái
     fetch(SCRIPT_URL, {
         method: 'POST',
+        mode: 'no-cors',
         headers: {
             'Content-Type': 'application/json',
         },
