@@ -2,7 +2,7 @@
 const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
 const SHEET_TITLE = 'Sheet3';
 const SHEET_RANGE = 'A:I';
-const API_KEY = 'YOUR_API_KEY'; // Thay thế bằng API key của bạn
+const API_KEY = 'AIzaSyDqRZQ5Ms9oosYxJk_2kVSM7Hj_ObcQdoU'; // Thay thế bằng API key của bạn
 const POLL_INTERVAL = 1000; // 5 giây
 
 // Lưu ý: Interval 1 giây có thể gây ra nhiều requests. Hãy theo dõi giới hạn API và điều chỉnh nếu cần.
