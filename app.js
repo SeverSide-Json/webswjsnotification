@@ -2,6 +2,7 @@ const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
 const SHEET_TITLE = 'Sheet3';
 const SHEET_RANGE = 'A:F';
 const POLL_INTERVAL = 1000; // 1 second
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlaExv_HowDwcBYPx8o3sNx1L8AUMBg2IjTk6joiAYrqycfpLG9M71nzFVODT4vw5FMg/exec'
 
 let currentEtag = null;
 
@@ -112,32 +113,30 @@ function createDashboardItem(data) {
 }
 
 function handleAction(data, action) {
-    const [stt, email, amount] = data;
-    const statusI = action === 'confirm' ? 'Done' : 'No';
-    const statusH = action === 'confirm' ? 'Approved' : 'Rejected';
+    const [stt] = data;  // Lấy STT từ dữ liệu
+    const statusI = action === 'confirm' ? 'Done' : 'No';  // Xác định trạng thái mới
 
+    // Gửi yêu cầu POST đến Google Apps Script để cập nhật trạng thái
     fetch(SCRIPT_URL, {
         method: 'POST',
-        mode: 'no-cors',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-            action: 'dashboard',
-            email, 
-            amount, 
-            statusI, 
-            statusH 
+            action: 'updateStatus',  // Hành động update status
+            stt: stt,                // STT của dòng cần cập nhật
+            status: statusI          // Trạng thái mới: 'Done' hoặc 'No'
         }),
     })
     .then(() => {
-        console.log(`${action} action processed for ${email} with amount ${amount}`);
-        loadDashboard();
+        console.log(`${action} action processed for ID: ${stt}`);
+        loadDashboard();  // Cập nhật lại dashboard sau khi xử lý
     })
     .catch(error => {
         console.error('Error processing action:', error);
     });
 }
+
 
 document.addEventListener('DOMContentLoaded', () => {
     longPoll(); // Start long polling
