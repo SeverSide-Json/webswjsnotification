@@ -2,7 +2,7 @@ const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
 const SHEET_TITLE = 'Sheet3';
 const SHEET_RANGE = 'A:F';
 const POLL_INTERVAL = 1000; // 1 second
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwwQULRV5WVOgJv72jUGY58_2iVwxcZB3tM4YuDf0GYRIETP0NzepSLE-5Aa74-oeyBZg/exec'
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUHh84KAvV27u15X8rwGHq36PM-x6Dy5hgPLAEwKqIyg8kC5IQ3NJVVc05p_hp0XE5aQ/exec'
 
 let currentEtag = null;
 
