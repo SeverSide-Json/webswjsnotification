@@ -1,8 +1,8 @@
-const SHEET_ID = '18iOdzpTqdkGYY-Y2-8H0HKz3aFWVdUIQXLo4r84NK0A';
+const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
 const SHEET_TITLE = 'Sheet3';
 const SHEET_RANGE = 'A:F';
 const POLL_INTERVAL = 1000; // 1 second
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwFPie9uHGv9ZxYMG0CurgdDA9YuqzP37zdyJ8kCS35avXTINZfzgKnV_D_bKrb9kZe/exec'
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUHh84KAvV27u15X8rwGHq36PM-x6Dy5hgPLAEwKqIyg8kC5IQ3NJVVc05p_hp0XE5aQ/exec'
 
 let currentEtag = null;
 
