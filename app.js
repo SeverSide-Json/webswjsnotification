@@ -101,7 +101,7 @@ function createDashboardItem(data) {
         </div>
         <div class="item-footer">
             <div class="item-unique-id" title="Nhấp để sao chép">
-                Mã đơn hàng: <span class="copyable-id">${orderId || 'Không có'}</span>
+                ID Game: <span class="copyable-id">${orderId || 'Không có'}</span>
             </div>
             <div class="action-buttons">
                 <button class="action-button confirm-button">Chấp nhận</button>
