@@ -149,11 +149,38 @@ function showCopyFeedback(message, isError = false) {
     feedback.style.zIndex = '1000';
     feedback.style.maxWidth = '80%';
     feedback.style.wordBreak = 'break-all';
+    feedback.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+    feedback.style.fontSize = '14px';
+    feedback.style.textAlign = 'center';
+    feedback.style.transition = 'opacity 0.3s ease-in-out';
 
     document.body.appendChild(feedback);
 
+    // Đảm bảo feedback hiển thị đúng trên mobile
+    const updatePosition = () => {
+        const viewportHeight = window.innerHeight;
+        if (viewportHeight < 600) { // Giả sử đây là kích thước của màn hình mobile
+            feedback.style.bottom = '10px';
+            feedback.style.fontSize = '12px';
+            feedback.style.padding = '8px 16px';
+        } else {
+            feedback.style.bottom = '20px';
+            feedback.style.fontSize = '14px';
+            feedback.style.padding = '10px 20px';
+        }
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+
+    // Animation khi ẩn feedback
+    setTimeout(() => {
+        feedback.style.opacity = '0';
+    }, 700);
+
     setTimeout(() => {
         feedback.remove();
+        window.removeEventListener('resize', updatePosition);
     }, 1000);
 }
 // ... (phần còn lại của mã giữ nguyên)
