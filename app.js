@@ -1,4 +1,4 @@
-const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
+onst SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
 const SHEET_TITLE = 'Sheet3';
 const SHEET_RANGE = 'A:I';
 const POLL_INTERVAL = 1000; // 1 second
@@ -14,7 +14,6 @@ function fetchSheetData() {
     })
     .then(response => {
         if (response.status === 304) {
-            // No changes, continue polling
             return null;
         }
         currentEtag = response.headers.get('ETag');
@@ -33,7 +32,9 @@ function updateDashboard(data) {
     const container = document.getElementById('dashboard-container');
     container.innerHTML = '';
     data.forEach(item => {
-        container.appendChild(createDashboardItem(item));
+        if (item[8] === 'Pending') {  // Kiểm tra cột I (index 8)
+            container.appendChild(createDashboardItem(item));
+        }
     });
 }
 
@@ -110,8 +111,8 @@ function createDashboardItem(data) {
         </div>
     `;
 
-    container.querySelector('.confirm-button').addEventListener('click', () => handleAction(data, 'confirm'));
-    container.querySelector('.reject-button').addEventListener('click', () => handleAction(data, 'reject'));
+    container.querySelector('.confirm-button').addEventListener('click', () => showConfirmationPopup(data, 'confirm'));
+    container.querySelector('.reject-button').addEventListener('click', () => showConfirmationPopup(data, 'reject'));
     
     const copyableId = container.querySelector('.copyable-id');
     if (orderId) {
@@ -124,6 +125,33 @@ function createDashboardItem(data) {
 
     return container;
 }
+
+function showConfirmationPopup(data, action) {
+    const popup = document.createElement('div');
+    popup.className = 'confirmation-popup';
+    const message = action === 'confirm' ? 'Đồng ý xác nhận?' : 'Đồng ý từ chối?';
+    
+    popup.innerHTML = `
+        <div class="popup-content">
+            <p>${message}</p>
+            <button class="popup-button confirm">Đồng ý</button>
+            <button class="popup-button cancel">Hủy</button>
+        </div>
+    `;
+    
+    document.body.appendChild(popup);
+    
+    popup.querySelector('.confirm').addEventListener('click', () => {
+        handleAction(data, action);
+        popup.remove();
+    });
+    
+    popup.querySelector('.cancel').addEventListener('click', () => {
+        popup.remove();
+    });
+}
+
+
 
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
@@ -186,10 +214,9 @@ function showCopyFeedback(message, isError = false) {
 // ... (phần còn lại của mã giữ nguyên)
 
 function handleAction(data, action) {
-    const [stt] = data;  // Lấy STT từ dữ liệu
-    const statusI = action === 'confirm' ? 'Done' : 'No';  // Xác định trạng thái mới
+    const [stt] = data;
+    const statusI = action === 'confirm' ? 'Done' : 'No';
 
-    // Gửi yêu cầu POST đến Google Apps Script để cập nhật trạng thái
     fetch(SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
@@ -197,14 +224,14 @@ function handleAction(data, action) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-            action: 'updateStatus',  // Hành động update status
-            stt: stt,                // STT của dòng cần cập nhật
-            status: statusI          // Trạng thái mới: 'Done' hoặc 'No'
+            action: 'updateStatus',
+            stt: stt,
+            status: statusI
         }),
     })
     .then(() => {
         console.log(`${action} action processed for ID: ${stt}`);
-        loadDashboard();  // Cập nhật lại dashboard sau khi xử lý
+        longPoll();  // Cập nhật lại dashboard sau khi xử lý
     })
     .catch(error => {
         console.error('Error processing action:', error);
