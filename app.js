@@ -225,11 +225,13 @@ function toggleTheme() {
 }
 
 function updateThemeToggleButton(isDarkMode) {
-    const themeToggle = document.querySelector('.theme-toggle i');
+    const themeToggle = document.querySelector('.theme-toggle');
     if (isDarkMode) {
-        themeToggle.className = 'fas fa-sun';
+        themeToggle.textContent = '☀️';  // Sun emoji
+        themeToggle.title = 'Chuyển sang chế độ sáng';
     } else {
-        themeToggle.className = 'fas fa-moon';
+        themeToggle.textContent = '🌙';  // Moon emoji
+        themeToggle.title = 'Chuyển sang chế độ tối';
     }
 }
 
@@ -244,7 +246,8 @@ function initTheme() {
 document.addEventListener('DOMContentLoaded', () => {
     const themeToggle = document.createElement('button');
     themeToggle.className = 'theme-toggle';
-    themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+    themeToggle.textContent = '🌙';  // Default to moon emoji
+    themeToggle.title = 'Chuyển sang chế độ tối';
     themeToggle.addEventListener('click', toggleTheme);
     document.body.appendChild(themeToggle);
 
