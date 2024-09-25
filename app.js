@@ -145,7 +145,7 @@ function createDashboardItem(data) {
 }
 
 
-function showConfirmationPopup(data, action, index) {
+function showConfirmationPopup(data, action) {
     const popup = document.createElement('div');
     popup.className = 'confirmation-popup';
     const message = action === 'confirm' ? 'Đồng ý xác nhận?' : 'Đồng ý từ chối?';
@@ -161,7 +161,17 @@ function showConfirmationPopup(data, action, index) {
     document.body.appendChild(popup);
     
     popup.querySelector('.confirm').addEventListener('click', () => {
-        handleAction(data, action, index);
+        showLoading();
+        handleAction(data, action)
+            .then(() => {
+                hideLoading();
+                showResultNotification(action === 'confirm' ? 'Gửi xác nhận thành công' : 'Gửi từ chối thành công');
+            })
+            .catch((error) => {
+                hideLoading();
+                showResultNotification('Có lỗi xảy ra, vui lòng thử lại', true);
+                console.error('Error:', error);
+            });
         popup.remove();
     });
     
@@ -242,7 +252,7 @@ function handleAction(data, action) {
         item.style.display = 'none';
     }
 
-    fetch(SCRIPT_URL, {
+    return fetch(SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
         headers: {
@@ -256,9 +266,6 @@ function handleAction(data, action) {
     })
     .then(() => {
         console.log(`${action} action processed for ID: ${stt}`);
-    })
-    .catch(error => {
-        console.error('Error processing action:', error);
     });
 }
 
@@ -304,3 +311,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initTheme();
 });
+
+function showLoading() {
+    const loading = document.createElement('div');
+    loading.className = 'loading-overlay';
+    loading.innerHTML = '<div class="loading-spinner"></div>';
+    document.body.appendChild(loading);
+}
+
+function hideLoading() {
+    const loading = document.querySelector('.loading-overlay');
+    if (loading) {
+        loading.remove();
+    }
+}
+
+function showResultNotification(message, isError = false) {
+    const notification = document.createElement('div');
+    notification.className = `result-notification ${isError ? 'error' : 'success'}`;
+    notification.innerHTML = `
+        <span>${message}</span>
+        <button class="close-notification">×</button>
+    `;
+    document.body.appendChild(notification);
+
+    const closeButton = notification.querySelector('.close-notification');
+    closeButton.addEventListener('click', () => {
+        notification.remove();
+    });
+
+    // Vẫn giữ tự động đóng sau 3 giây, nhưng người dùng có thể đóng sớm hơn nếu muốn
+    setTimeout(() => {
+        if (document.body.contains(notification)) {
+            notification.remove();
+        }
+    }, 3000);
+}
