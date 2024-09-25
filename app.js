@@ -30,14 +30,30 @@ function fetchSheetData() {
 
 function updateDashboard(data) {
     const container = document.getElementById('dashboard-container');
-    container.innerHTML = '';
+    
     data.forEach((item, index) => {
-        if (item[8] === 'pending') {
-            const dashboardItem = createDashboardItem(item, index);
-            container.appendChild(dashboardItem);
+        const [stt, email, amount, time, date, userToken, orderId, , status] = item;
+        const itemId = `item-${stt}`;
+        let dashboardItem = document.getElementById(itemId);
+        
+        if (status.toLowerCase() === 'pending') {
+            if (!dashboardItem) {
+                // Nếu item chưa tồn tại và có trạng thái 'pending', thêm mới
+                dashboardItem = createDashboardItem(item);
+                container.appendChild(dashboardItem);
+            } else {
+                // Nếu item đã tồn tại nhưng đang ẩn, hiển thị lại
+                dashboardItem.style.display = 'block';
+            }
+        } else {
+            if (dashboardItem) {
+                // Nếu item tồn tại nhưng không còn 'pending', ẩn đi
+                dashboardItem.style.display = 'none';
+            }
         }
     });
 }
+
 
 function longPoll() {
     fetchSheetData().then(data => {
@@ -81,11 +97,11 @@ function formatDate(dateValue) {
 // Cập nhật hàm createDashboardItem để sử dụng hàm formatDate mới
 // ... (các phần khác của mã giữ nguyên)
 
-function createDashboardItem(data, index) {
+function createDashboardItem(data) {
     const [stt, email, amount, time, date, userToken, orderId] = data;
     const container = document.createElement('div');
     container.className = 'dashboard-item';
-    container.id = `item-${index}`;
+    container.id = `item-${stt}`;
 
     const formattedAmount = new Intl.NumberFormat('vi-VN').format(parseFloat(amount));
     const formattedDate = formatDate(date);
@@ -113,8 +129,8 @@ function createDashboardItem(data, index) {
         </div>
     `;
 
-    container.querySelector('.confirm-button').addEventListener('click', () => showConfirmationPopup(data, 'confirm', index));
-    container.querySelector('.reject-button').addEventListener('click', () => showConfirmationPopup(data, 'reject', index));
+    container.querySelector('.confirm-button').addEventListener('click', () => showConfirmationPopup(data, 'confirm'));
+    container.querySelector('.reject-button').addEventListener('click', () => showConfirmationPopup(data, 'reject'));
     
     const copyableId = container.querySelector('.copyable-id');
     if (orderId) {
@@ -127,6 +143,7 @@ function createDashboardItem(data, index) {
 
     return container;
 }
+
 
 function showConfirmationPopup(data, action, index) {
     const popup = document.createElement('div');
@@ -215,18 +232,14 @@ function showCopyFeedback(message, isError = false) {
 }
 // ... (phần còn lại của mã giữ nguyên)
 
-function handleAction(data, action, index) {
+function handleAction(data, action) {
     const [stt] = data;
     const statusI = action === 'confirm' ? 'Done' : 'No';
 
     // Ẩn item ngay lập tức
-    const item = document.getElementById(`item-${index}`);
+    const item = document.getElementById(`item-${stt}`);
     if (item) {
-        item.style.opacity = '0';
-        item.style.transition = 'opacity 0.3s ease';
-        setTimeout(() => {
-            item.remove();
-        }, 300);
+        item.style.display = 'none';
     }
 
     fetch(SCRIPT_URL, {
@@ -243,7 +256,6 @@ function handleAction(data, action, index) {
     })
     .then(() => {
         console.log(`${action} action processed for ID: ${stt}`);
-        // Không cần gọi longPoll() ở đây nữa vì item đã được ẩn
     })
     .catch(error => {
         console.error('Error processing action:', error);
