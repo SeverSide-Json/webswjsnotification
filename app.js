@@ -215,3 +215,38 @@ function handleAction(data, action) {
 document.addEventListener('DOMContentLoaded', () => {
     longPoll(); // Start long polling
 });
+
+function toggleTheme() {
+    const body = document.body;
+    body.classList.toggle('dark-mode');
+    const isDarkMode = body.classList.contains('dark-mode');
+    localStorage.setItem('darkMode', isDarkMode);
+    updateThemeToggleButton(isDarkMode);
+}
+
+function updateThemeToggleButton(isDarkMode) {
+    const themeToggle = document.querySelector('.theme-toggle i');
+    if (isDarkMode) {
+        themeToggle.className = 'fas fa-sun';
+    } else {
+        themeToggle.className = 'fas fa-moon';
+    }
+}
+
+function initTheme() {
+    const darkModeStored = localStorage.getItem('darkMode');
+    if (darkModeStored === 'true') {
+        document.body.classList.add('dark-mode');
+    }
+    updateThemeToggleButton(darkModeStored === 'true');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const themeToggle = document.createElement('button');
+    themeToggle.className = 'theme-toggle';
+    themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+    themeToggle.addEventListener('click', toggleTheme);
+    document.body.appendChild(themeToggle);
+
+    initTheme();
+});
