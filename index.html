@@ -11,27 +11,53 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="PWA Notify">
     <style>
+:root {
+    --bg-color: #f0f0f0;
+    --item-bg-color: #ffffff;
+    --text-color: #333333;
+    --header-bg-color: #f8f9fa;
+    --border-color: #e9ecef;
+    --link-color: #007bff;
+    --button-confirm: #28a745;
+    --button-reject: #dc3545;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode {
+    --bg-color: #1a1a1a;
+    --item-bg-color: #2c2c2c;
+    --text-color: #f0f0f0;
+    --header-bg-color: #222222;
+    --border-color: #444444;
+    --link-color: #4dabf7;
+    --button-confirm: #2ecc71;
+    --button-reject: #e74c3c;
+    --shadow-color: rgba(255, 255, 255, 0.1);
+}
+
 body {
     font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     margin: 0;
     padding: 20px;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .dashboard-item {
-    background-color: #ffffff;
+    background-color: var(--item-bg-color);
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px var(--shadow-color);
     margin-bottom: 20px;
     overflow: hidden;
 }
 
 .item-header {
-    background-color: #f8f9fa;
+    background-color: var(--header-bg-color);
     padding: 10px 15px;
     display: flex;
     justify-content: space-between;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .item-id {
@@ -39,7 +65,8 @@ body {
 }
 
 .item-date {
-    color: #6c757d;
+    color: var(--text-color);
+    opacity: 0.7;
 }
 
 .item-body {
@@ -53,30 +80,31 @@ body {
 }
 
 .item-amount, .item-time {
-    color: #495057;
+    color: var(--text-color);
+    opacity: 0.8;
     margin-bottom: 3px;
 }
 
 .item-footer {
     padding: 15px;
-    background-color: #f8f9fa;
+    background-color: var(--header-bg-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid #e9ecef;
+    border-top: 1px solid var(--border-color);
     flex-wrap: wrap;
 }
 
 .item-unique-id {
     flex-grow: 1;
-    color: #495057;
+    color: var(--text-color);
     margin-bottom: 10px;
     width: 100%;
 }
 
 .copyable-id {
     cursor: pointer;
-    color: #007bff;
+    color: var(--link-color);
     text-decoration: underline;
 }
 
@@ -93,21 +121,58 @@ body {
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, opacity 0.3s;
+    color: white;
 }
 
 .confirm-button {
-    background-color: #28a745;
-    color: white;
+    background-color: var(--button-confirm);
 }
 
 .reject-button {
-    background-color: #dc3545;
-    color: white;
+    background-color: var(--button-reject);
 }
 
 .action-button:hover {
     opacity: 0.9;
+}
+
+.copy-feedback {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    background-color: var(--button-confirm);
+    color: white;
+    border-radius: 5px;
+    z-index: 1000;
+    max-width: 80%;
+    word-break: break-all;
+    text-align: center;
+    box-shadow: 0 2px 10px var(--shadow-color);
+    font-size: 14px;
+}
+
+.theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: var(--item-bg-color);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px var(--shadow-color);
+    color: var(--text-color);
+}
+
+.theme-toggle i {
+    font-size: 20px;
 }
 
 @media (max-width: 768px) {
@@ -140,6 +205,19 @@ body {
     .action-button {
         width: 100%;
     }
+
+    .copy-feedback {
+        bottom: 10px;
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+
+    .theme-toggle {
+        top: 10px;
+        right: 10px;
+        width: 35px;
+        height: 35px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -149,6 +227,10 @@ body {
 
     .item-amount, .item-time {
         font-size: 14px;
+    }
+
+    .copy-feedback {
+        font-size: 12px;
     }
 }
     </style>
