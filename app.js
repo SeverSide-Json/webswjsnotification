@@ -80,7 +80,7 @@ function formatDate(dateValue) {
 // ... (các phần khác của mã giữ nguyên)
 
 function createDashboardItem(data) {
-    const [stt, email, amount, time, date, userToken, id] = data;
+    const [stt, email, amount, time, date, userToken, orderId] = data;
     const container = document.createElement('div');
     container.className = 'dashboard-item';
 
@@ -97,20 +97,26 @@ function createDashboardItem(data) {
                 <div class="item-email">${email}</div>
                 <div class="item-amount">Số tiền: ${formattedAmount} VNĐ</div>
                 <div class="item-time">Thời gian: ${time}</div>
-                <div class="item-unique-id" title="Nhấp để sao chép">
-                    Mã đơn hàng: <span class="copyable-id">${id}</span>
-                </div>
             </div>
         </div>
         <div class="item-footer">
-            <button class="action-button confirm-button">Chấp nhận</button>
-            <button class="action-button reject-button">Từ chối</button>
+            <div class="item-unique-id" title="Nhấp để sao chép">
+                Mã đơn hàng: <span class="copyable-id">${orderId || 'Không có'}</span>
+            </div>
+            <div class="action-buttons">
+                <button class="action-button confirm-button">Chấp nhận</button>
+                <button class="action-button reject-button">Từ chối</button>
+            </div>
         </div>
     `;
 
     container.querySelector('.confirm-button').addEventListener('click', () => handleAction(data, 'confirm'));
     container.querySelector('.reject-button').addEventListener('click', () => handleAction(data, 'reject'));
-    container.querySelector('.copyable-id').addEventListener('click', (e) => copyToClipboard(e.target.textContent));
+    
+    const copyableId = container.querySelector('.copyable-id');
+    if (orderId) {
+        copyableId.addEventListener('click', (e) => copyToClipboard(e.target.textContent));
+    }
 
     return container;
 }
