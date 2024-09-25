@@ -31,9 +31,10 @@ function fetchSheetData() {
 function updateDashboard(data) {
     const container = document.getElementById('dashboard-container');
     container.innerHTML = '';
-    data.forEach(item => {
-        if (item[8] === 'Pending') {  // Kiểm tra cột I (index 8)
-            container.appendChild(createDashboardItem(item));
+    data.forEach((item, index) => {
+        if (item[8] === 'pending') {
+            const dashboardItem = createDashboardItem(item, index);
+            container.appendChild(dashboardItem);
         }
     });
 }
@@ -80,10 +81,11 @@ function formatDate(dateValue) {
 // Cập nhật hàm createDashboardItem để sử dụng hàm formatDate mới
 // ... (các phần khác của mã giữ nguyên)
 
-function createDashboardItem(data) {
+function createDashboardItem(data, index) {
     const [stt, email, amount, time, date, userToken, orderId] = data;
     const container = document.createElement('div');
     container.className = 'dashboard-item';
+    container.id = `item-${index}`;
 
     const formattedAmount = new Intl.NumberFormat('vi-VN').format(parseFloat(amount));
     const formattedDate = formatDate(date);
@@ -111,8 +113,8 @@ function createDashboardItem(data) {
         </div>
     `;
 
-    container.querySelector('.confirm-button').addEventListener('click', () => showConfirmationPopup(data, 'confirm'));
-    container.querySelector('.reject-button').addEventListener('click', () => showConfirmationPopup(data, 'reject'));
+    container.querySelector('.confirm-button').addEventListener('click', () => showConfirmationPopup(data, 'confirm', index));
+    container.querySelector('.reject-button').addEventListener('click', () => showConfirmationPopup(data, 'reject', index));
     
     const copyableId = container.querySelector('.copyable-id');
     if (orderId) {
@@ -126,7 +128,7 @@ function createDashboardItem(data) {
     return container;
 }
 
-function showConfirmationPopup(data, action) {
+function showConfirmationPopup(data, action, index) {
     const popup = document.createElement('div');
     popup.className = 'confirmation-popup';
     const message = action === 'confirm' ? 'Đồng ý xác nhận?' : 'Đồng ý từ chối?';
@@ -142,7 +144,7 @@ function showConfirmationPopup(data, action) {
     document.body.appendChild(popup);
     
     popup.querySelector('.confirm').addEventListener('click', () => {
-        handleAction(data, action);
+        handleAction(data, action, index);
         popup.remove();
     });
     
@@ -213,9 +215,19 @@ function showCopyFeedback(message, isError = false) {
 }
 // ... (phần còn lại của mã giữ nguyên)
 
-function handleAction(data, action) {
+function handleAction(data, action, index) {
     const [stt] = data;
     const statusI = action === 'confirm' ? 'Done' : 'No';
+
+    // Ẩn item ngay lập tức
+    const item = document.getElementById(`item-${index}`);
+    if (item) {
+        item.style.opacity = '0';
+        item.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => {
+            item.remove();
+        }, 300);
+    }
 
     fetch(SCRIPT_URL, {
         method: 'POST',
@@ -231,7 +243,7 @@ function handleAction(data, action) {
     })
     .then(() => {
         console.log(`${action} action processed for ID: ${stt}`);
-        longPoll();  // Cập nhật lại dashboard sau khi xử lý
+        // Không cần gọi longPoll() ở đây nữa vì item đã được ẩn
     })
     .catch(error => {
         console.error('Error processing action:', error);
