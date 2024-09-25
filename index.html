@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="PWA Notify">
     <style>
-        body {
+body {
     font-family: Arial, sans-serif;
     background-color: #f0f0f0;
     margin: 0;
@@ -61,7 +61,25 @@
     padding: 15px;
     background-color: #f8f9fa;
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #e9ecef;
+}
+
+.item-unique-id {
+    flex-grow: 1;
+    color: #495057;
+}
+
+.copyable-id {
+    cursor: pointer;
+    color: #007bff;
+    text-decoration: underline;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
 }
 
 .action-button {
@@ -76,7 +94,6 @@
 .confirm-button {
     background-color: #28a745;
     color: white;
-    margin-right: 10px;
 }
 
 .reject-button {
