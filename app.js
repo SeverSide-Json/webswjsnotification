@@ -115,7 +115,11 @@ function createDashboardItem(data) {
     
     const copyableId = container.querySelector('.copyable-id');
     if (orderId) {
-        copyableId.addEventListener('click', (e) => copyToClipboard(e.target.textContent));
+        copyableId.addEventListener('click', () => copyToClipboard(orderId));
+    } else {
+        copyableId.style.cursor = 'default';
+        copyableId.style.textDecoration = 'none';
+        copyableId.style.color = 'inherit';
     }
 
     return container;
@@ -130,6 +134,7 @@ function copyToClipboard(text) {
     });
 }
 
+// ... (các hàm khác giữ nguyên)
 function showCopyFeedback(message, isError = false) {
     const feedback = document.createElement('div');
     feedback.textContent = message;
@@ -151,18 +156,6 @@ function showCopyFeedback(message, isError = false) {
         feedback.remove();
     }, 1000);
 }
-
-function createDashboardItem(data) {
-    // ... (phần còn lại của hàm giữ nguyên)
-
-    const copyableId = container.querySelector('.copyable-id');
-    if (orderId) {
-        copyableId.addEventListener('click', (e) => copyToClipboard(e.target.textContent));
-    }
-
-    return container;
-}
-
 // ... (phần còn lại của mã giữ nguyên)
 
 function handleAction(data, action) {
