@@ -123,7 +123,7 @@ function createDashboardItem(data) {
 
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
-        showCopyFeedback('Đã sao chép mã đơn hàng!');
+        showCopyFeedback(`Đã sao chép: ${text}`);
     }).catch(err => {
         console.error('Không thể sao chép: ', err);
         showCopyFeedback('Không thể sao chép, vui lòng thử lại', true);
@@ -142,12 +142,25 @@ function showCopyFeedback(message, isError = false) {
     feedback.style.color = 'white';
     feedback.style.borderRadius = '5px';
     feedback.style.zIndex = '1000';
+    feedback.style.maxWidth = '80%';
+    feedback.style.wordBreak = 'break-all';
 
     document.body.appendChild(feedback);
 
     setTimeout(() => {
         feedback.remove();
-    }, 2000);
+    }, 1000);
+}
+
+function createDashboardItem(data) {
+    // ... (phần còn lại của hàm giữ nguyên)
+
+    const copyableId = container.querySelector('.copyable-id');
+    if (orderId) {
+        copyableId.addEventListener('click', (e) => copyToClipboard(e.target.textContent));
+    }
+
+    return container;
 }
 
 // ... (phần còn lại của mã giữ nguyên)
