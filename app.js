@@ -77,15 +77,14 @@ function formatDate(dateValue) {
 }
 
 // Cập nhật hàm createDashboardItem để sử dụng hàm formatDate mới
+// ... (các phần khác của mã giữ nguyên)
+
 function createDashboardItem(data) {
-    const [stt, email, amount, time, date, userToken] = data;
+    const [stt, email, amount, time, date, userToken, id] = data;
     const container = document.createElement('div');
     container.className = 'dashboard-item';
 
-    // Định dạng số tiền
     const formattedAmount = new Intl.NumberFormat('vi-VN').format(parseFloat(amount));
-
-    // Định dạng ngày tháng
     const formattedDate = formatDate(date);
 
     container.innerHTML = `
@@ -98,6 +97,9 @@ function createDashboardItem(data) {
                 <div class="item-email">${email}</div>
                 <div class="item-amount">Số tiền: ${formattedAmount} VNĐ</div>
                 <div class="item-time">Thời gian: ${time}</div>
+                <div class="item-unique-id" title="Nhấp để sao chép">
+                    Mã đơn hàng: <span class="copyable-id">${id}</span>
+                </div>
             </div>
         </div>
         <div class="item-footer">
@@ -108,9 +110,41 @@ function createDashboardItem(data) {
 
     container.querySelector('.confirm-button').addEventListener('click', () => handleAction(data, 'confirm'));
     container.querySelector('.reject-button').addEventListener('click', () => handleAction(data, 'reject'));
+    container.querySelector('.copyable-id').addEventListener('click', (e) => copyToClipboard(e.target.textContent));
 
     return container;
 }
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showCopyFeedback('Đã sao chép mã đơn hàng!');
+    }).catch(err => {
+        console.error('Không thể sao chép: ', err);
+        showCopyFeedback('Không thể sao chép, vui lòng thử lại', true);
+    });
+}
+
+function showCopyFeedback(message, isError = false) {
+    const feedback = document.createElement('div');
+    feedback.textContent = message;
+    feedback.style.position = 'fixed';
+    feedback.style.bottom = '20px';
+    feedback.style.left = '50%';
+    feedback.style.transform = 'translateX(-50%)';
+    feedback.style.padding = '10px 20px';
+    feedback.style.backgroundColor = isError ? '#ff6b6b' : '#51cf66';
+    feedback.style.color = 'white';
+    feedback.style.borderRadius = '5px';
+    feedback.style.zIndex = '1000';
+
+    document.body.appendChild(feedback);
+
+    setTimeout(() => {
+        feedback.remove();
+    }, 2000);
+}
+
+// ... (phần còn lại của mã giữ nguyên)
 
 function handleAction(data, action) {
     const [stt] = data;  // Lấy STT từ dữ liệu
