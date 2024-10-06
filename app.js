@@ -115,6 +115,8 @@ function updateNotificationBadge(badgeId, count) {
     }
 }
 
+
+
 function updateTabNotifications() {
     updateNotificationBadge('badge1', newItemsCount1);
     updateNotificationBadge('badge2', newItemsCount2);
@@ -122,37 +124,27 @@ function updateTabNotifications() {
 }
 
 
-function initTabs() {
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const tabId = button.getAttribute('data-tab');
-            console.log(`Switching to tab: ${tabId}`);
-            
-            activeTab = tabId;
-
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            tabContents.forEach(content => content.classList.remove('active'));
-
-            button.classList.add('active');
-            const activeContent = document.getElementById(tabId);
-            if (activeContent) {
-                activeContent.classList.add('active');
-                console.log(`Active tab content: ${activeContent.innerHTML}`);
-            }
-
-            // Reset notification count for the active tab
-            if (tabId === 'tab1') {
-                newItemsCount1 = 0;
-            } else if (tabId === 'tab2') {
-                newItemsCount2 = 0;
-            }
-            updateTabNotifications();
-        });
+function initApp() {
+    console.log('Initializing app...');
+    initTabs();
+    initTheme();
+    
+    // Initial data fetch for both sheets
+    Promise.all([
+        fetchSheetData(SHEET_1_ID, null),
+        fetchSheetData(SHEET_2_ID, null)
+    ]).then(([data1, data2]) => {
+        if (data1) updateDashboard(data1, 'dashboard-container-1', 'badge1');
+        if (data2) updateDashboard(data2, 'dashboard-container-2', 'badge2');
+        updateTabNotifications();
+        longPoll(); // Start long polling after initial fetch
+    }).catch(error => {
+        console.error('Error during initial data fetch:', error);
+        longPoll(); // Start long polling even if initial fetch fails
     });
 }
+
+document.addEventListener('DOMContentLoaded', initApp);
 
 // Cập nhật hàm createDashboardItem để sử dụng hàm formatDate mới
 // ... (các phần khác của mã giữ nguyên)
@@ -357,6 +349,7 @@ function updateThemeToggleButton(isDarkMode) {
         }
     }
 }
+
 function createThemeToggle() {
     const themeToggle = document.createElement('button');
     themeToggle.className = 'theme-toggle';
@@ -386,28 +379,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
 });
 
-function initApp() {
-    console.log('Initializing app...');
-    initTabs();
-    initTheme();
-    
-    // Initial data fetch for both sheets
-    Promise.all([
-        fetchSheetData(SHEET_1_ID, null),
-        fetchSheetData(SHEET_2_ID, null)
-    ]).then(([data1, data2]) => {
-        if (data1) updateDashboard(data1, 'dashboard-container-1', 'badge1');
-        if (data2) updateDashboard(data2, 'dashboard-container-2', 'badge2');
-        updateTabNotifications();
-        longPoll(); // Start long polling after initial fetch
-    }).catch(error => {
-        console.error('Error during initial data fetch:', error);
-        longPoll(); // Start long polling even if initial fetch fails
-    });
-}
-
-document.addEventListener('DOMContentLoaded', initApp);
-
 function showLoading() {
     const loading = document.createElement('div');
     loading.className = 'loading-overlay';
@@ -426,23 +397,20 @@ function showResultNotification(message, isError = false) {
     const notification = document.createElement('div');
     notification.className = `result-notification ${isError ? 'error' : 'success'}`;
     notification.innerHTML = `
-        <div class="result-notification-content">${message}</div>
-        <button class="close-notification">&times;</button>
+        <span>${message}</span>
+        <button class="close-notification">×</button>
     `;
     document.body.appendChild(notification);
 
-    // Thêm class 'show' sau một khoảng thời gian ngắn để kích hoạt animation
-    setTimeout(() => notification.classList.add('show'), 10);
-
     const closeButton = notification.querySelector('.close-notification');
     closeButton.addEventListener('click', () => {
-        notification.classList.remove('show');
-        setTimeout(() => notification.remove(), 300); // Đợi animation kết thúc trước khi xóa
+        notification.remove();
     });
 
-    // Tự động đóng sau 5 giây
+    // Vẫn giữ tự động đóng sau 3 giây, nhưng người dùng có thể đóng sớm hơn nếu muốn
     setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => notification.remove(), 300);
-    }, 5000);
+        if (document.body.contains(notification)) {
+            notification.remove();
+        }
+    }, 3000);
 }
