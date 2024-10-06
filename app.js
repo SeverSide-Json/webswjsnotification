@@ -102,6 +102,16 @@ function formatDate(dateValue) {
     }
 }
 
+function updateNotificationBadge(badgeId, count) {
+    const badge = document.getElementById(badgeId);
+    if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'inline';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
 // Cập nhật hàm createDashboardItem để sử dụng hàm formatDate mới
 // ... (các phần khác của mã giữ nguyên)
 
