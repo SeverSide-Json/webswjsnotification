@@ -105,15 +105,15 @@ function formatDate(dateValue) {
 
 function updateNotificationBadge(badgeId, count) {
     const badge = document.getElementById(badgeId);
-    if (count > 0) {
-        badge.textContent = count;
-        badge.style.display = 'inline';
-    } else {
-        badge.style.display = 'none';
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'inline';
+        } else {
+            badge.style.display = 'none';
+        }
     }
 }
-
-
 
 function updateTabNotifications() {
     updateNotificationBadge('badge1', newItemsCount1);
@@ -138,7 +138,10 @@ function initTabs() {
 
             button.classList.add('active');
             const activeContent = document.getElementById(tabId);
-            activeContent.classList.add('active');
+            if (activeContent) {
+                activeContent.classList.add('active');
+                console.log(`Active tab content: ${activeContent.innerHTML}`);
+            }
 
             // Reset notification count for the active tab
             if (tabId === 'tab1') {
@@ -147,8 +150,6 @@ function initTabs() {
                 newItemsCount2 = 0;
             }
             updateTabNotifications();
-
-            console.log(`Active tab content: ${activeContent.innerHTML}`);
         });
     });
 }
@@ -346,13 +347,23 @@ function toggleTheme() {
 
 function updateThemeToggleButton(isDarkMode) {
     const themeToggle = document.querySelector('.theme-toggle');
-    if (isDarkMode) {
-        themeToggle.textContent = '☀️';  // Sun emoji
-        themeToggle.title = 'Chuyển sang chế độ sáng';
-    } else {
-        themeToggle.textContent = '🌙';  // Moon emoji
-        themeToggle.title = 'Chuyển sang chế độ tối';
+    if (themeToggle) {
+        if (isDarkMode) {
+            themeToggle.textContent = '☀️';  // Sun emoji
+            themeToggle.title = 'Chuyển sang chế độ sáng';
+        } else {
+            themeToggle.textContent = '🌙';  // Moon emoji
+            themeToggle.title = 'Chuyển sang chế độ tối';
+        }
     }
+}
+function createThemeToggle() {
+    const themeToggle = document.createElement('button');
+    themeToggle.className = 'theme-toggle';
+    themeToggle.textContent = '🌙';  // Default to moon emoji
+    themeToggle.title = 'Chuyển sang chế độ tối';
+    themeToggle.addEventListener('click', toggleTheme);
+    document.body.appendChild(themeToggle);
 }
 
 function initTheme() {
@@ -360,6 +371,7 @@ function initTheme() {
     if (darkModeStored === 'true') {
         document.body.classList.add('dark-mode');
     }
+    createThemeToggle();
     updateThemeToggleButton(darkModeStored === 'true');
 }
 
@@ -373,6 +385,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initTheme();
 });
+
+function initApp() {
+    console.log('Initializing app...');
+    initTabs();
+    initTheme();
+    
+    // Initial data fetch for both sheets
+    Promise.all([
+        fetchSheetData(SHEET_1_ID, null),
+        fetchSheetData(SHEET_2_ID, null)
+    ]).then(([data1, data2]) => {
+        if (data1) updateDashboard(data1, 'dashboard-container-1', 'badge1');
+        if (data2) updateDashboard(data2, 'dashboard-container-2', 'badge2');
+        updateTabNotifications();
+        longPoll(); // Start long polling after initial fetch
+    }).catch(error => {
+        console.error('Error during initial data fetch:', error);
+        longPoll(); // Start long polling even if initial fetch fails
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initApp);
 
 function showLoading() {
     const loading = document.createElement('div');
