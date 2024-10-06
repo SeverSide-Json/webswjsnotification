@@ -426,8 +426,8 @@ function showResultNotification(message, isError = false) {
     const notification = document.createElement('div');
     notification.className = `result-notification ${isError ? 'error' : 'success'}`;
     notification.innerHTML = `
-        <span>${message}</span>
-        <button class="close-notification">×</button>
+        <div class="result-notification-content">${message}</div>
+        <button class="close-notification">&times;</button>
     `;
     document.body.appendChild(notification);
 
@@ -440,9 +440,9 @@ function showResultNotification(message, isError = false) {
         setTimeout(() => notification.remove(), 300); // Đợi animation kết thúc trước khi xóa
     });
 
-    // Tự động đóng sau 3 giây
+    // Tự động đóng sau 5 giây
     setTimeout(() => {
         notification.classList.remove('show');
         setTimeout(() => notification.remove(), 300);
-    }, 3000);
+    }, 5000);
 }
