@@ -54,6 +54,7 @@ function updateDashboard(data, containerId, badgeId) {
     const newItems = Math.max(0, newItemCount - oldItemCount);
     updateNotificationBadge(badgeId, newItems);
 
+    console.log(`Updated ${containerId} with ${newItemCount} items`);
     return newItems;
 }
 
@@ -110,6 +111,46 @@ function updateNotificationBadge(badgeId, count) {
     } else {
         badge.style.display = 'none';
     }
+}
+
+
+
+function updateTabNotifications() {
+    updateNotificationBadge('badge1', newItemsCount1);
+    updateNotificationBadge('badge2', newItemsCount2);
+    console.log(`Updated notifications: Tab1: ${newItemsCount1}, Tab2: ${newItemsCount2}`);
+}
+
+
+function initTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.getAttribute('data-tab');
+            console.log(`Switching to tab: ${tabId}`);
+            
+            activeTab = tabId;
+
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            button.classList.add('active');
+            const activeContent = document.getElementById(tabId);
+            activeContent.classList.add('active');
+
+            // Reset notification count for the active tab
+            if (tabId === 'tab1') {
+                newItemsCount1 = 0;
+            } else if (tabId === 'tab2') {
+                newItemsCount2 = 0;
+            }
+            updateTabNotifications();
+
+            console.log(`Active tab content: ${activeContent.innerHTML}`);
+        });
+    });
 }
 
 // Cập nhật hàm createDashboardItem để sử dụng hàm formatDate mới
@@ -289,7 +330,10 @@ function handleAction(data, action, scriptUrl) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded and parsed');
+    initTabs();
     longPoll(); // Start long polling
+    initTheme();
 });
 
 function toggleTheme() {
