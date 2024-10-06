@@ -1,4 +1,4 @@
-:root {
+  :root {
     --bg-color: #f0f0f0;
     --item-bg-color: #ffffff;
     --text-color: #333333;
@@ -8,9 +8,6 @@
     --button-confirm: #28a745;
     --button-reject: #dc3545;
     --shadow-color: rgba(0, 0, 0, 0.1);
-    --tab-bg-color: #e0e0e0;
-    --tab-active-bg-color: #ffffff;
-    --tab-active-border-color: #007bff;
 }
 
 body.dark-mode {
@@ -23,9 +20,6 @@ body.dark-mode {
     --button-confirm: #2ecc71;
     --button-reject: #e74c3c;
     --shadow-color: rgba(255, 255, 255, 0.1);
-    --tab-bg-color: #333333;
-    --tab-active-bg-color: #444444;
-    --tab-active-border-color: #4dabf7;
 }
 
 body {
@@ -37,61 +31,6 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
-/* Tab styles */
-.tab-container {
-    display: flex;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 20px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    padding-bottom: 2px; /* Thêm padding để tránh che khuất border-bottom */
-}
-
-.tab-container::-webkit-scrollbar {
-    display: none;
-}
-
-.tab-button {
-    padding: 10px 20px;
-    border: none;
-    background-color: var(--tab-bg-color);
-    color: var(--text-color);
-    cursor: pointer;
-    position: relative;
-    transition: background-color 0.3s, color 0.3s, transform 0.2s;
-    white-space: nowrap;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-    margin-right: 5px; /* Tăng khoảng cách giữa các tab */
-    box-shadow: 0 -1px 5px rgba(0,0,0,0.1);
-}
-
-.tab-button:hover {
-    background-color: var(--item-bg-color);
-    transform: translateY(-2px);
-}
-
-.tab-button.active {
-    background-color: var(--tab-active-bg-color);
-    border-bottom: 2px solid var(--tab-active-border-color);
-    transform: translateY(-2px);
-    z-index: 1;
-}
-.notification-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background-color: #ff4136;
-    color: white;
-    border-radius: 50%;
-    padding: 2px 6px;
-    font-size: 12px;
-    font-weight: bold;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-/* Dashboard item styles */
 .dashboard-item {
     background-color: var(--item-bg-color);
     border-radius: 8px;
@@ -185,7 +124,6 @@ body {
     opacity: 0.9;
 }
 
-/* Feedback and notification styles */
 .copy-feedback {
     position: fixed;
     bottom: 20px;
@@ -202,7 +140,6 @@ body {
     box-shadow: 0 2px 10px var(--shadow-color);
     font-size: 14px;
 }
-
 .confirmation-popup {
     position: fixed;
     top: 0;
@@ -240,8 +177,6 @@ body {
     background-color: var(--button-reject);
     color: white;
 }
-
-/* Theme toggle button */
 .theme-toggle {
     position: fixed;
     top: 20px;
@@ -265,7 +200,8 @@ body {
     opacity: 0.8;
 }
 
-/* Loading spinner */
+/* ... (các styles hiện có giữ nguyên) */
+
 .loading-overlay {
     position: fixed;
     top: 0;
@@ -293,53 +229,39 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-/* Cải thiện styles cho notifications */
 .result-notification {
     position: fixed;
     top: 20px;
     right: 20px;
-    padding: 12px 20px;
-    border-radius: 8px;
+    padding: 15px 20px;
+    border-radius: 5px;
     color: white;
     font-weight: bold;
     z-index: 1000;
+    animation: fadeInOut 3s ease-in-out;
     display: flex;
     align-items: center;
     justify-content: space-between;
     min-width: 250px;
     max-width: 80%;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    opacity: 0;
-    transform: translateY(-20px);
-    transition: opacity 0.3s, transform 0.3s;
-}
-
-.result-notification.show {
-    opacity: 1;
-    transform: translateY(0);
 }
 
 .result-notification.success {
-    background-color: #28a745;
+    background-color: #2ecc71;
 }
 
 .result-notification.error {
-    background-color: #dc3545;
-}
-
-.result-notification-content {
-    flex-grow: 1;
-    margin-right: 10px;
+    background-color: #e74c3c;
 }
 
 .close-notification {
     background: none;
     border: none;
     color: white;
-    font-size: 24px;
+    font-size: 20px;
     cursor: pointer;
     padding: 0;
-    line-height: 1;
+    margin-left: 10px;
     opacity: 0.7;
     transition: opacity 0.3s;
 }
@@ -353,16 +275,34 @@ body {
     10%, 90% { opacity: 1; }
 }
 
-/* Responsive design */
+@media (max-width: 768px) {
+    .result-notification {
+        top: 10px;
+        right: 10px;
+        padding: 10px 15px;
+        font-size: 14px;
+        min-width: 200px;
+    }
+
+    .close-notification {
+        font-size: 18px;
+    }
+}
+
+        
+@media (max-width: 768px) {
+    .theme-toggle {
+        top: 10px;
+        right: 10px;
+        width: 35px;
+        height: 35px;
+        font-size: 18px;
+    }
+}
+
 @media (max-width: 768px) {
     body {
         padding: 10px;
-    }
-
-   .tab-button {
-        padding: 8px 15px;
-        font-size: 14px;
-        margin-right: 3px; /* Giảm khoảng cách trên mobile nhưng vẫn giữ một chút */
     }
 
     .item-header {
@@ -391,26 +331,62 @@ body {
         width: 100%;
     }
 
+    .copy-feedback {
+        bottom: 10px;
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+
     .theme-toggle {
         top: 10px;
         right: 10px;
         width: 35px;
         height: 35px;
     }
-
-     .result-notification {
-        top: 10px;
-        right: 10px;
-        left: 10px;
-        max-width: calc(100% - 20px);
-        font-size: 14px;
-    }
-
-    .close-notification {
-        font-size: 18px;
-    }
 }
 
+/* Existing styles */
+
+.tab-container {
+    display: flex;
+    border-bottom: 1px solid #ccc;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    border: none;
+    background-color: #f1f1f1;
+    cursor: pointer;
+    position: relative; /* Added for positioning the badge */
+}
+
+.tab-button.active {
+    background-color: #fff;
+    border-bottom: 2px solid #007bff;
+}
+
+.tab-content {
+    display: none;
+    padding: 20px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* New styles for notification badge */
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    display: none; /* Hidden by default */
+}
+       
 @media (max-width: 480px) {
     .item-email {
         font-size: 16px;
@@ -418,12 +394,6 @@ body {
 
     .item-amount, .item-time {
         font-size: 14px;
-    }
-
-    .tab-button {
-        padding: 6px 12px;
-        font-size: 12px;
-        margin-right: 2px; /* Giảm khoảng cách hơn nữa trên màn hình rất nhỏ */
     }
 
     .copy-feedback {
