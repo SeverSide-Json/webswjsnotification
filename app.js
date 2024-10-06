@@ -431,15 +431,18 @@ function showResultNotification(message, isError = false) {
     `;
     document.body.appendChild(notification);
 
+    // Thêm class 'show' sau một khoảng thời gian ngắn để kích hoạt animation
+    setTimeout(() => notification.classList.add('show'), 10);
+
     const closeButton = notification.querySelector('.close-notification');
     closeButton.addEventListener('click', () => {
-        notification.remove();
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300); // Đợi animation kết thúc trước khi xóa
     });
 
-    // Vẫn giữ tự động đóng sau 3 giây, nhưng người dùng có thể đóng sớm hơn nếu muốn
+    // Tự động đóng sau 3 giây
     setTimeout(() => {
-        if (document.body.contains(notification)) {
-            notification.remove();
-        }
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
