@@ -45,6 +45,7 @@ body {
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    padding-bottom: 2px; /* Thêm padding để tránh che khuất border-bottom */
 }
 
 .tab-container::-webkit-scrollbar {
@@ -58,34 +59,25 @@ body {
     color: var(--text-color);
     cursor: pointer;
     position: relative;
-    transition: background-color 0.3s, color 0.3s;
+    transition: background-color 0.3s, color 0.3s, transform 0.2s;
     white-space: nowrap;
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
-    margin-right: 2px;
+    margin-right: 5px; /* Tăng khoảng cách giữa các tab */
+    box-shadow: 0 -1px 5px rgba(0,0,0,0.1);
 }
 
 .tab-button:hover {
     background-color: var(--item-bg-color);
+    transform: translateY(-2px);
 }
 
 .tab-button.active {
     background-color: var(--tab-active-bg-color);
     border-bottom: 2px solid var(--tab-active-border-color);
+    transform: translateY(-2px);
+    z-index: 1;
 }
-
-.tab-content {
-    display: none;
-    padding: 20px;
-    background-color: var(--item-bg-color);
-    border-radius: 0 0 5px 5px;
-    box-shadow: 0 2px 5px var(--shadow-color);
-}
-
-.tab-content.active {
-    display: block;
-}
-
 .notification-badge {
     position: absolute;
     top: -8px;
@@ -300,22 +292,30 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-/* Result notification */
+/* Cải thiện styles cho notifications */
 .result-notification {
     position: fixed;
     top: 20px;
     right: 20px;
     padding: 15px 20px;
-    border-radius: 5px;
+    border-radius: 8px;
     color: white;
     font-weight: bold;
     z-index: 1000;
-    animation: fadeInOut 3s ease-in-out;
     display: flex;
     align-items: center;
     justify-content: space-between;
     min-width: 250px;
     max-width: 80%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.result-notification.show {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .result-notification.success {
@@ -353,9 +353,10 @@ body {
         padding: 10px;
     }
 
-    .tab-button {
+   .tab-button {
         padding: 8px 15px;
         font-size: 14px;
+        margin-right: 3px; /* Giảm khoảng cách trên mobile nhưng vẫn giữ một chút */
     }
 
     .item-header {
@@ -416,6 +417,7 @@ body {
     .tab-button {
         padding: 6px 12px;
         font-size: 12px;
+        margin-right: 2px; /* Giảm khoảng cách hơn nữa trên màn hình rất nhỏ */
     }
 
     .copy-feedback {
