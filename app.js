@@ -123,6 +123,37 @@ function updateTabNotifications() {
     console.log(`Updated notifications: Tab1: ${newItemsCount1}, Tab2: ${newItemsCount2}`);
 }
 
+function initTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.getAttribute('data-tab');
+            console.log(`Switching to tab: ${tabId}`);
+            
+            activeTab = tabId;
+
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            button.classList.add('active');
+            const activeContent = document.getElementById(tabId);
+            if (activeContent) {
+                activeContent.classList.add('active');
+                console.log(`Active tab content: ${activeContent.innerHTML}`);
+            }
+
+            // Reset notification count for the active tab
+            if (tabId === 'tab1') {
+                newItemsCount1 = 0;
+            } else if (tabId === 'tab2') {
+                newItemsCount2 = 0;
+            }
+            updateTabNotifications();
+        });
+    });
+}
 
 function initApp() {
     console.log('Initializing app...');
