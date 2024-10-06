@@ -1,13 +1,19 @@
-const SHEET_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
+const SHEET_1_ID = '1Zebh-8FerNoGurfyqQP-pcSFFT_CXAcnh1I-GFHpv_c';
+const SHEET_2_ID = '18iOdzpTqdkGYY-Y2-8H0HKz3aFWVdUIQXLo4r84NK0A'; // Replace with your second sheet ID
 const SHEET_TITLE = 'Sheet3';
 const SHEET_RANGE = 'A:I';
 const POLL_INTERVAL = 1000; // 1 second
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUHh84KAvV27u15X8rwGHq36PM-x6Dy5hgPLAEwKqIyg8kC5IQ3NJVVc05p_hp0XE5aQ/exec'
+const SCRIPT_URL_1 = 'https://script.google.com/macros/s/AKfycbyUHh84KAvV27u15X8rwGHq36PM-x6Dy5hgPLAEwKqIyg8kC5IQ3NJVVc05p_hp0XE5aQ/exec';
+const SCRIPT_URL_2 = 'https://script.google.com/macros/s/AKfycbwFPie9uHGv9ZxYMG0CurgdDA9YuqzP37zdyJ8kCS35avXTINZfzgKnV_D_bKrb9kZe/exec'; // Replace with your second script URL
 
-let currentEtag = null;
+let currentEtag1 = null;
+let currentEtag2 = null;
+let activeTab = 'tab1';
+let newItemsCount1 = 0;
+let newItemsCount2 = 0;
 
-function fetchSheetData() {
-    const FULL_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_TITLE}&range=${SHEET_RANGE}`;
+function fetchSheetData(sheetId, currentEtag) {
+    const FULL_URL = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=${SHEET_TITLE}&range=${SHEET_RANGE}`;
     
     return fetch(FULL_URL, {
         headers: currentEtag ? { 'If-None-Match': currentEtag } : {}
@@ -28,41 +34,43 @@ function fetchSheetData() {
     });
 }
 
-function updateDashboard(data) {
-    const container = document.getElementById('dashboard-container');
+
+function updateDashboard(data, containerId, badgeId) {
+    const container = document.getElementById(containerId);
+    const oldItemCount = container.querySelectorAll('.dashboard-item').length;
+    container.innerHTML = ''; // Clear existing items
     
+    let newItemCount = 0;
     data.forEach((item, index) => {
         const [stt, email, amount, time, date, userToken, orderId, , status] = item;
-        const itemId = `item-${stt}`;
-        let dashboardItem = document.getElementById(itemId);
-        
         if (status.toLowerCase() === 'pending') {
-            if (!dashboardItem) {
-                // Nếu item chưa tồn tại và có trạng thái 'pending', thêm mới
-                dashboardItem = createDashboardItem(item);
-                container.appendChild(dashboardItem);
-            } else {
-                // Nếu item đã tồn tại nhưng đang ẩn, hiển thị lại
-                dashboardItem.style.display = 'block';
-            }
-        } else {
-            if (dashboardItem) {
-                // Nếu item tồn tại nhưng không còn 'pending', ẩn đi
-                dashboardItem.style.display = 'none';
-            }
+            const dashboardItem = createDashboardItem(item, containerId === 'dashboard-container-1' ? SCRIPT_URL_1 : SCRIPT_URL_2);
+            container.appendChild(dashboardItem);
+            newItemCount++;
         }
     });
+
+    // Update the notification badge
+    const newItems = Math.max(0, newItemCount - oldItemCount);
+    updateNotificationBadge(badgeId, newItems);
+
+    return newItems;
 }
 
-
 function longPoll() {
-    fetchSheetData().then(data => {
-        if (data !== null) {
-            console.log("Data changed, updating dashboard");
-            updateDashboard(data);
-        } else {
-            console.log("No changes detected");
+    Promise.all([
+        fetchSheetData(SHEET_1_ID, currentEtag1),
+        fetchSheetData(SHEET_2_ID, currentEtag2)
+    ]).then(([data1, data2]) => {
+        if (data1 !== null) {
+            console.log("Data changed in Sheet 1, updating dashboard");
+            newItemsCount1 += updateDashboard(data1, 'dashboard-container-1', 'badge1');
         }
+        if (data2 !== null) {
+            console.log("Data changed in Sheet 2, updating dashboard");
+            newItemsCount2 += updateDashboard(data2, 'dashboard-container-2', 'badge2');
+        }
+        updateTabNotifications();
     }).catch(error => {
         console.error('Error fetching data:', error);
     }).finally(() => {
@@ -97,7 +105,7 @@ function formatDate(dateValue) {
 // Cập nhật hàm createDashboardItem để sử dụng hàm formatDate mới
 // ... (các phần khác của mã giữ nguyên)
 
-function createDashboardItem(data) {
+function createDashboardItem(data, scriptUrl) {
     const [stt, email, amount, time, date, userToken, orderId] = data;
     const container = document.createElement('div');
     container.className = 'dashboard-item';
@@ -129,8 +137,8 @@ function createDashboardItem(data) {
         </div>
     `;
 
-    container.querySelector('.confirm-button').addEventListener('click', () => showConfirmationPopup(data, 'confirm'));
-    container.querySelector('.reject-button').addEventListener('click', () => showConfirmationPopup(data, 'reject'));
+    container.querySelector('.confirm-button').addEventListener('click', () => showConfirmationPopup(data, 'confirm', scriptUrl));
+    container.querySelector('.reject-button').addEventListener('click', () => showConfirmationPopup(data, 'reject', scriptUrl));
     
     const copyableId = container.querySelector('.copyable-id');
     if (orderId) {
@@ -145,7 +153,7 @@ function createDashboardItem(data) {
 }
 
 
-function showConfirmationPopup(data, action) {
+function showConfirmationPopup(data, action, scriptUrl) {
     const popup = document.createElement('div');
     popup.className = 'confirmation-popup';
     const message = action === 'confirm' ? 'Đồng ý xác nhận?' : 'Đồng ý từ chối?';
@@ -162,7 +170,7 @@ function showConfirmationPopup(data, action) {
     
     popup.querySelector('.confirm').addEventListener('click', () => {
         showLoading();
-        handleAction(data, action)
+        handleAction(data, action, scriptUrl)
             .then(() => {
                 hideLoading();
                 showResultNotification(action === 'confirm' ? 'Gửi xác nhận thành công' : 'Gửi từ chối thành công');
@@ -242,7 +250,7 @@ function showCopyFeedback(message, isError = false) {
 }
 // ... (phần còn lại của mã giữ nguyên)
 
-function handleAction(data, action) {
+function handleAction(data, action, scriptUrl) {
     const [stt] = data;
     const statusI = action === 'confirm' ? 'Done' : 'No';
 
@@ -252,7 +260,7 @@ function handleAction(data, action) {
         item.style.display = 'none';
     }
 
-    return fetch(SCRIPT_URL, {
+    return fetch(scriptUrl, {
         method: 'POST',
         mode: 'no-cors',
         headers: {
