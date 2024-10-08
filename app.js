@@ -327,7 +327,7 @@ function showCopyFeedback(message, isError = false) {
 
 function handleAction(data, action, scriptUrl) {
     const [stt] = data;
-    const statusI = action === 'confirm' ? 'Done' : 'Not';
+    const statusI = action === 'confirm' ? 'Done' : 'No';
 
     // Ẩn item ngay lập tức
     const item = document.getElementById(`item-${stt}`);
