@@ -3,7 +3,7 @@ const SHEET_2_ID = '18iOdzpTqdkGYY-Y2-8H0HKz3aFWVdUIQXLo4r84NK0A'; // Replace wi
 const SHEET_TITLE = 'Sheet3';
 const SHEET_RANGE = 'A:I';
 const POLL_INTERVAL = 1000; // 1 second
-const SCRIPT_URL_1 = 'https://script.google.com/macros/s/AKfycbyUHh84KAvV27u15X8rwGHq36PM-x6Dy5hgPLAEwKqIyg8kC5IQ3NJVVc05p_hp0XE5aQ/exec';
+const SCRIPT_URL_1 = 'https://script.google.com/macros/s/AKfycbxnRTPFG7ngo9CXescAdBnhFDlVrjJvtt6ukd9fkb-t3W_wnHHyJo6fMT__1ggU2v-uTA/exec';
 const SCRIPT_URL_2 = 'https://script.google.com/macros/s/AKfycbwFPie9uHGv9ZxYMG0CurgdDA9YuqzP37zdyJ8kCS35avXTINZfzgKnV_D_bKrb9kZe/exec'; // Replace with your second script URL
 
 let currentEtag1 = null;
